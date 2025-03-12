@@ -43,6 +43,7 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
   const [size, setSize] = useState('B1');
   const [element, setElement] = useState('Pyrus');
   const [specialProperties, setSpecialProperties] = useState('Normal');
+  const [filterSpecialProperties, setFilterSpecialProperties] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [price, setPrice] = useState('');
   const [referenceUri, setReferenceUri] = useState('');
@@ -68,7 +69,8 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
     'Clear',
     'Pearl',
     'Prototype',
-    'Painted'
+    'Painted',
+    'Translucent',
   ];
 
   // Name suggestions

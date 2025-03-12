@@ -80,6 +80,8 @@ function HomeContent() {
       if (elementFilter) params.append('element', elementFilter);
       
       const url = `/api/bakugan${params.toString() ? `?${params.toString()}` : ''}`;
+      console.log("Fetching from URL:", url);
+      
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -87,13 +89,17 @@ function HomeContent() {
       }
       
       const data = await response.json();
+      console.log("Fetched items:", data.length);
       setBakuganItems(data);
       
       // Extract unique values for filter dropdowns
       if (data.length > 0) {
         // Create arrays of unique values using Set and Array.from for proper typing
-        const elementValues = Array.from(new Set(data.map((item: Bakugan) => item.element))) as string[];
-        const specialPropValues = Array.from(new Set(data.map((item: Bakugan) => item.specialProperties))) as string[];
+        const elementValues = Array.from(new Set(data.map((item: Bakugan) => item.element).filter(Boolean))) as string[];
+        const specialPropValues = Array.from(new Set(data.map((item: Bakugan) => item.specialProperties).filter(Boolean))) as string[];
+        
+        console.log("Unique elements:", elementValues);
+        console.log("Unique special properties:", specialPropValues);
         
         setUniqueElements(elementValues);
         setUniqueSpecialProperties(specialPropValues);
@@ -150,15 +156,32 @@ function HomeContent() {
     };
   }, []);
   
-  // Apply client-side filters (for price range and special properties)
+  // Apply client-side filters (for all filters to ensure they work correctly)
   const applyFilters = useCallback(() => {
     let filtered = [...bakuganItems];
+    
+    // Filter by element if selected (client-side filtering in addition to server-side)
+    if (elementFilter) {
+      filtered = filtered.filter(item => 
+        item.element === elementFilter
+      );
+      console.log(`After element filter (${elementFilter}):`, filtered.length);
+    }
+    
+    // Filter by size if selected (client-side filtering in addition to server-side)
+    if (sizeFilter) {
+      filtered = filtered.filter(item => 
+        item.size === sizeFilter
+      );
+      console.log(`After size filter (${sizeFilter}):`, filtered.length);
+    }
     
     // Filter by special properties if selected
     if (specialPropertiesFilter) {
       filtered = filtered.filter(item => 
         item.specialProperties === specialPropertiesFilter
       );
+      console.log(`After special properties filter (${specialPropertiesFilter}):`, filtered.length);
     }
     
     // Filter by price range
@@ -167,6 +190,7 @@ function HomeContent() {
       if (!isNaN(minPrice)) {
         filtered = filtered.filter(item => item.currentPrice >= minPrice);
       }
+      console.log(`After min price filter (${minPriceFilter}):`, filtered.length);
     }
     
     if (maxPriceFilter) {
@@ -174,10 +198,13 @@ function HomeContent() {
       if (!isNaN(maxPrice)) {
         filtered = filtered.filter(item => item.currentPrice <= maxPrice);
       }
+      console.log(`After max price filter (${maxPriceFilter}):`, filtered.length);
     }
     
     setFilteredItems(filtered);
-  }, [bakuganItems, specialPropertiesFilter, minPriceFilter, maxPriceFilter]);
+    console.log("Applied filters:", { elementFilter, sizeFilter, specialPropertiesFilter, minPriceFilter, maxPriceFilter });
+    console.log("Filtered items:", filtered.length);
+  }, [bakuganItems, elementFilter, sizeFilter, specialPropertiesFilter, minPriceFilter, maxPriceFilter]);
   
   // Debounced search function
   const debouncedFetch = useCallback(() => {
@@ -303,6 +330,9 @@ function HomeContent() {
   // Fetch all Bakugan items on component mount
   useEffect(() => {
     fetchBakuganItems();
+    
+    // Initialize with all elements for the filter
+    setUniqueElements(elements.map(e => e.value));
   }, []);
   
   // Apply server-side filters when filter values change
@@ -320,7 +350,7 @@ function HomeContent() {
   // Apply client-side filters when needed
   useEffect(() => {
     applyFilters();
-  }, [bakuganItems, specialPropertiesFilter, minPriceFilter, maxPriceFilter, applyFilters]);
+  }, [bakuganItems, elementFilter, sizeFilter, specialPropertiesFilter, minPriceFilter, maxPriceFilter, applyFilters]);
 
   // Fetch price history when a Bakugan is selected
   useEffect(() => {
@@ -508,9 +538,12 @@ function HomeContent() {
                   className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
                 >
                   <option value="">All Properties</option>
-                  {uniqueSpecialProperties.map((prop, index) => (
-                    <option key={index} value={prop}>{prop}</option>
-                  ))}
+                  <option value="Normal">Normal</option>
+                  <option value="Clear">Clear</option>
+                  <option value="Pearl">Pearl</option>
+                  <option value="Prototype">Prototype</option>
+                  <option value="Painted">Painted</option>
+                  <option value="Translucent">Translucent</option>
                 </select>
               </div>
               
