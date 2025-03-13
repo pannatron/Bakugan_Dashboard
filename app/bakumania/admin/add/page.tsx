@@ -146,12 +146,6 @@ function AdminContent() {
         <div className="text-center">
           <h1 className="text-3xl font-bold text-red-500 mb-4">Access Denied</h1>
           <p className="text-gray-400 mb-6">You do not have admin privileges to access this page.</p>
-          <Link 
-            href="/"
-            className="px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 transition-all duration-300"
-          >
-            Return to Home
-          </Link>
         </div>
       </div>
     );
@@ -195,14 +189,6 @@ function AdminContent() {
               Verify
             </button>
             
-            <div className="text-center">
-              <Link 
-                href="/"
-                className="text-sm text-gray-400 hover:text-blue-400 transition-colors"
-              >
-                Return to Home
-              </Link>
-            </div>
           </form>
         </div>
       </div>
@@ -217,12 +203,6 @@ function AdminContent() {
           Admin Dashboard - Add Bakugan
         </h1>
         
-        <Link 
-          href="/"
-          className="px-4 py-2 rounded-xl bg-gray-800 text-white font-semibold hover:bg-gray-700 transition-all duration-300"
-        >
-          Return to Home
-        </Link>
       </div>
       
       {error && (
