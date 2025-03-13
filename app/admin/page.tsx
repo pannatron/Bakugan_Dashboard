@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AddBakuganForm from '@/app/components/AddBakuganForm';
+import ManageRecommendations from '@/app/components/ManageRecommendations';
 import Link from 'next/link';
 
 // Admin page component
@@ -203,6 +204,10 @@ function AdminContent() {
       
       <div className="mb-12">
         <AddBakuganForm onAddBakugan={handleAddBakugan} />
+      </div>
+      
+      <div className="mb-12">
+        <ManageRecommendations />
       </div>
     </div>
   );

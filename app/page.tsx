@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import BakuganCard from './components/BakuganCard';
+import RecommendedBakugan from './components/RecommendedBakugan';
 import { AuthProvider } from './components/AuthProvider';
 import { useAuth } from './components/AuthProvider';
 import Link from 'next/link';
@@ -389,6 +390,9 @@ function HomeContent() {
         </div>
       </div>
 
+      {/* Recommended Bakugan Section */}
+      <RecommendedBakugan />
+      
       {/* Filter Section */}
       <div className="w-full mb-8 bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50">
         <div className="flex justify-between items-center mb-4">

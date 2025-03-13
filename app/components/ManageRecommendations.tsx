@@ -1,0 +1,459 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+
+interface Bakugan {
+  _id: string;
+  names: string[];
+  size: string;
+  element: string;
+  specialProperties: string;
+  imageUrl: string;
+  currentPrice: number;
+  referenceUri: string;
+}
+
+interface Recommendation {
+  _id: string;
+  bakuganId: Bakugan | string;
+  rank: number;
+  reason: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const ManageRecommendations = () => {
+  const [bakuganItems, setBakuganItems] = useState<Bakugan[]>([]);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  
+  // Form states for each rank
+  const [rank1BakuganId, setRank1BakuganId] = useState<string>('');
+  const [rank1Reason, setRank1Reason] = useState<string>('');
+  const [rank2BakuganId, setRank2BakuganId] = useState<string>('');
+  const [rank2Reason, setRank2Reason] = useState<string>('');
+  const [rank3BakuganId, setRank3BakuganId] = useState<string>('');
+  const [rank3Reason, setRank3Reason] = useState<string>('');
+
+  // Fetch all Bakugan items and recommendations
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch all Bakugan items
+        const bakuganResponse = await fetch('/api/bakugan');
+        if (!bakuganResponse.ok) {
+          throw new Error('Failed to fetch Bakugan items');
+        }
+        const bakuganData = await bakuganResponse.json();
+        setBakuganItems(bakuganData);
+        
+        // Fetch all recommendations
+        const recommendationsResponse = await fetch('/api/recommendations');
+        if (!recommendationsResponse.ok) {
+          throw new Error('Failed to fetch recommendations');
+        }
+        const recommendationsData = await recommendationsResponse.json();
+        setRecommendations(recommendationsData);
+        
+        // Set form values based on existing recommendations
+        recommendationsData.forEach((rec: Recommendation) => {
+          const bakuganId = typeof rec.bakuganId === 'string' ? rec.bakuganId : rec.bakuganId._id;
+          
+          if (rec.rank === 1) {
+            setRank1BakuganId(bakuganId);
+            setRank1Reason(rec.reason || '');
+          } else if (rec.rank === 2) {
+            setRank2BakuganId(bakuganId);
+            setRank2Reason(rec.reason || '');
+          } else if (rec.rank === 3) {
+            setRank3BakuganId(bakuganId);
+            setRank3Reason(rec.reason || '');
+          }
+        });
+        
+        setError(null);
+      } catch (err: any) {
+        console.error('Error fetching data:', err);
+        setError(err.message || 'Failed to fetch data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
+
+  // Handle form submission for a specific rank
+  const handleSubmit = async (rank: number) => {
+    try {
+      setLoading(true);
+      setSuccess(null);
+      setError(null);
+      
+      let bakuganId = '';
+      let reason = '';
+      
+      // Get the correct values based on rank
+      if (rank === 1) {
+        bakuganId = rank1BakuganId;
+        reason = rank1Reason;
+      } else if (rank === 2) {
+        bakuganId = rank2BakuganId;
+        reason = rank2Reason;
+      } else if (rank === 3) {
+        bakuganId = rank3BakuganId;
+        reason = rank3Reason;
+      }
+      
+      if (!bakuganId) {
+        setError(`Please select a Bakugan for rank ${rank}`);
+        setLoading(false);
+        return;
+      }
+      
+      // Create or update recommendation
+      const response = await fetch('/api/recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bakuganId,
+          rank,
+          reason,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to update rank ${rank} recommendation`);
+      }
+      
+      // Refresh recommendations
+      const recommendationsResponse = await fetch('/api/recommendations');
+      const recommendationsData = await recommendationsResponse.json();
+      setRecommendations(recommendationsData);
+      
+      setSuccess(`Rank ${rank} recommendation updated successfully`);
+    } catch (err: any) {
+      console.error(`Error updating rank ${rank} recommendation:`, err);
+      setError(err.message || `Failed to update rank ${rank} recommendation`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle recommendation deletion
+  const handleDelete = async (id: string, rank: number) => {
+    try {
+      setLoading(true);
+      setSuccess(null);
+      setError(null);
+      
+      // Delete recommendation
+      const response = await fetch(`/api/recommendations?id=${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to delete rank ${rank} recommendation`);
+      }
+      
+      // Refresh recommendations
+      const recommendationsResponse = await fetch('/api/recommendations');
+      const recommendationsData = await recommendationsResponse.json();
+      setRecommendations(recommendationsData);
+      
+      // Clear form values for the deleted rank
+      if (rank === 1) {
+        setRank1BakuganId('');
+        setRank1Reason('');
+      } else if (rank === 2) {
+        setRank2BakuganId('');
+        setRank2Reason('');
+      } else if (rank === 3) {
+        setRank3BakuganId('');
+        setRank3Reason('');
+      }
+      
+      setSuccess(`Rank ${rank} recommendation deleted successfully`);
+    } catch (err: any) {
+      console.error(`Error deleting rank ${rank} recommendation:`, err);
+      setError(err.message || `Failed to delete rank ${rank} recommendation`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get recommendation by rank
+  const getRecommendationByRank = (rank: number) => {
+    return recommendations.find(rec => rec.rank === rank);
+  };
+
+  // Get medal color based on rank
+  const getMedalColor = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return 'from-yellow-300 to-yellow-500'; // Gold
+      case 2:
+        return 'from-gray-300 to-gray-500'; // Silver
+      case 3:
+        return 'from-amber-600 to-amber-800'; // Bronze
+      default:
+        return 'from-blue-300 to-blue-500';
+    }
+  };
+
+  // Get medal text based on rank
+  const getMedalText = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return 'Top Pick';
+      case 2:
+        return 'Runner Up';
+      case 3:
+        return 'Notable Mention';
+      default:
+        return 'Recommended';
+    }
+  };
+
+  if (loading && bakuganItems.length === 0) {
+    return (
+      <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50">
+        <h2 className="text-xl font-semibold text-blue-300 mb-6">Manage Recommendations</h2>
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50">
+      <h2 className="text-xl font-semibold text-blue-300 mb-6">Manage Recommendations</h2>
+      
+      {error && (
+        <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300">
+          <p className="font-semibold">{error}</p>
+        </div>
+      )}
+      
+      {success && (
+        <div className="mb-6 p-4 bg-green-500/20 border border-green-500/50 rounded-xl text-green-300">
+          <p className="font-semibold">{success}</p>
+        </div>
+      )}
+      
+      <div className="space-y-8">
+        {/* Rank 1 Recommendation */}
+        <div className="bg-gradient-to-b from-gray-800/50 to-gray-700/30 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50">
+          <div className="flex items-center gap-4 mb-4">
+            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getMedalColor(1)} p-1 border border-gray-700/50 flex items-center justify-center shadow-lg`}>
+              <div className="w-full h-full rounded-full bg-gray-900/80 flex items-center justify-center text-white font-bold text-xl">
+                1
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-yellow-300">{getMedalText(1)}</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="rank1BakuganId" className="block text-sm font-medium text-gray-300 mb-1">
+                Select Bakugan
+              </label>
+              <select
+                id="rank1BakuganId"
+                value={rank1BakuganId}
+                onChange={(e) => setRank1BakuganId(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
+              >
+                <option value="">-- Select Bakugan --</option>
+                {bakuganItems.map((bakugan) => (
+                  <option key={bakugan._id} value={bakugan._id}>
+                    {bakugan.names[0]} ({bakugan.size}, {bakugan.element})
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="rank1Reason" className="block text-sm font-medium text-gray-300 mb-1">
+                Reason for Recommendation
+              </label>
+              <textarea
+                id="rank1Reason"
+                value={rank1Reason}
+                onChange={(e) => setRank1Reason(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
+                placeholder="Why is this Bakugan recommended?"
+              ></textarea>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleSubmit(1)}
+                disabled={loading || !rank1BakuganId}
+                className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-500 text-white font-semibold hover:from-yellow-500 hover:to-yellow-400 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Saving...' : 'Save Rank 1'}
+              </button>
+              
+              {getRecommendationByRank(1) && (
+                <button
+                  onClick={() => handleDelete(getRecommendationByRank(1)?._id || '', 1)}
+                  disabled={loading}
+                  className="px-4 py-2 rounded-xl bg-red-600/30 text-red-300 border border-red-600/30 hover:bg-red-600/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Rank 2 Recommendation */}
+        <div className="bg-gradient-to-b from-gray-800/50 to-gray-700/30 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50">
+          <div className="flex items-center gap-4 mb-4">
+            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getMedalColor(2)} p-1 border border-gray-700/50 flex items-center justify-center shadow-lg`}>
+              <div className="w-full h-full rounded-full bg-gray-900/80 flex items-center justify-center text-white font-bold text-xl">
+                2
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-300">{getMedalText(2)}</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="rank2BakuganId" className="block text-sm font-medium text-gray-300 mb-1">
+                Select Bakugan
+              </label>
+              <select
+                id="rank2BakuganId"
+                value={rank2BakuganId}
+                onChange={(e) => setRank2BakuganId(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
+              >
+                <option value="">-- Select Bakugan --</option>
+                {bakuganItems.map((bakugan) => (
+                  <option key={bakugan._id} value={bakugan._id}>
+                    {bakugan.names[0]} ({bakugan.size}, {bakugan.element})
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="rank2Reason" className="block text-sm font-medium text-gray-300 mb-1">
+                Reason for Recommendation
+              </label>
+              <textarea
+                id="rank2Reason"
+                value={rank2Reason}
+                onChange={(e) => setRank2Reason(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
+                placeholder="Why is this Bakugan recommended?"
+              ></textarea>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleSubmit(2)}
+                disabled={loading || !rank2BakuganId}
+                className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-gray-600 to-gray-500 text-white font-semibold hover:from-gray-500 hover:to-gray-400 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Saving...' : 'Save Rank 2'}
+              </button>
+              
+              {getRecommendationByRank(2) && (
+                <button
+                  onClick={() => handleDelete(getRecommendationByRank(2)?._id || '', 2)}
+                  disabled={loading}
+                  className="px-4 py-2 rounded-xl bg-red-600/30 text-red-300 border border-red-600/30 hover:bg-red-600/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Rank 3 Recommendation */}
+        <div className="bg-gradient-to-b from-gray-800/50 to-gray-700/30 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50">
+          <div className="flex items-center gap-4 mb-4">
+            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getMedalColor(3)} p-1 border border-gray-700/50 flex items-center justify-center shadow-lg`}>
+              <div className="w-full h-full rounded-full bg-gray-900/80 flex items-center justify-center text-white font-bold text-xl">
+                3
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-amber-700">{getMedalText(3)}</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="rank3BakuganId" className="block text-sm font-medium text-gray-300 mb-1">
+                Select Bakugan
+              </label>
+              <select
+                id="rank3BakuganId"
+                value={rank3BakuganId}
+                onChange={(e) => setRank3BakuganId(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
+              >
+                <option value="">-- Select Bakugan --</option>
+                {bakuganItems.map((bakugan) => (
+                  <option key={bakugan._id} value={bakugan._id}>
+                    {bakugan.names[0]} ({bakugan.size}, {bakugan.element})
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="rank3Reason" className="block text-sm font-medium text-gray-300 mb-1">
+                Reason for Recommendation
+              </label>
+              <textarea
+                id="rank3Reason"
+                value={rank3Reason}
+                onChange={(e) => setRank3Reason(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
+                placeholder="Why is this Bakugan recommended?"
+              ></textarea>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleSubmit(3)}
+                disabled={loading || !rank3BakuganId}
+                className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-700 to-amber-600 text-white font-semibold hover:from-amber-600 hover:to-amber-500 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Saving...' : 'Save Rank 3'}
+              </button>
+              
+              {getRecommendationByRank(3) && (
+                <button
+                  onClick={() => handleDelete(getRecommendationByRank(3)?._id || '', 3)}
+                  disabled={loading}
+                  className="px-4 py-2 rounded-xl bg-red-600/30 text-red-300 border border-red-600/30 hover:bg-red-600/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ManageRecommendations;
