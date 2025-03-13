@@ -115,7 +115,7 @@ if (existingBakugan) {
     bakuganId: existingBakugan._id,
     price: currentPrice,
     timestamp: date, // Use the date directly as provided by the client
-    notes: 'Price updated via Add form', // Add a note to indicate this was from the Add form
+    notes: '', // Remove the "Price updated via Add form" note
     referenceUri: referenceUri || '',
   });
 
