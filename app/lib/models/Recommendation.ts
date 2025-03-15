@@ -19,7 +19,7 @@ const RecommendationSchema = new Schema<IRecommendation>(
       type: Number,
       required: true,
       min: 1,
-      max: 3,
+      max: 5,
       unique: true,
     },
     reason: {

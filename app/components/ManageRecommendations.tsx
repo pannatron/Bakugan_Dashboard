@@ -36,6 +36,10 @@ const ManageRecommendations = () => {
   const [rank2Reason, setRank2Reason] = useState<string>('');
   const [rank3BakuganId, setRank3BakuganId] = useState<string>('');
   const [rank3Reason, setRank3Reason] = useState<string>('');
+  const [rank4BakuganId, setRank4BakuganId] = useState<string>('');
+  const [rank4Reason, setRank4Reason] = useState<string>('');
+  const [rank5BakuganId, setRank5BakuganId] = useState<string>('');
+  const [rank5Reason, setRank5Reason] = useState<string>('');
 
   // Fetch all Bakugan items and recommendations
   useEffect(() => {
@@ -72,6 +76,12 @@ const ManageRecommendations = () => {
           } else if (rec.rank === 3) {
             setRank3BakuganId(bakuganId);
             setRank3Reason(rec.reason || '');
+          } else if (rec.rank === 4) {
+            setRank4BakuganId(bakuganId);
+            setRank4Reason(rec.reason || '');
+          } else if (rec.rank === 5) {
+            setRank5BakuganId(bakuganId);
+            setRank5Reason(rec.reason || '');
           }
         });
         
@@ -107,6 +117,12 @@ const ManageRecommendations = () => {
       } else if (rank === 3) {
         bakuganId = rank3BakuganId;
         reason = rank3Reason;
+      } else if (rank === 4) {
+        bakuganId = rank4BakuganId;
+        reason = rank4Reason;
+      } else if (rank === 5) {
+        bakuganId = rank5BakuganId;
+        reason = rank5Reason;
       }
       
       if (!bakuganId) {
@@ -179,6 +195,12 @@ const ManageRecommendations = () => {
       } else if (rank === 3) {
         setRank3BakuganId('');
         setRank3Reason('');
+      } else if (rank === 4) {
+        setRank4BakuganId('');
+        setRank4Reason('');
+      } else if (rank === 5) {
+        setRank5BakuganId('');
+        setRank5Reason('');
       }
       
       setSuccess(`Rank ${rank} recommendation deleted successfully`);
@@ -204,6 +226,10 @@ const ManageRecommendations = () => {
         return 'from-gray-300 to-gray-500'; // Silver
       case 3:
         return 'from-amber-600 to-amber-800'; // Bronze
+      case 4:
+        return 'from-purple-400 to-purple-600'; // Purple
+      case 5:
+        return 'from-teal-400 to-teal-600'; // Teal
       default:
         return 'from-blue-300 to-blue-500';
     }
@@ -218,6 +244,10 @@ const ManageRecommendations = () => {
         return 'Runner Up';
       case 3:
         return 'Notable Mention';
+      case 4:
+        return 'Great Choice';
+      case 5:
+        return 'Solid Option';
       default:
         return 'Recommended';
     }
@@ -442,6 +472,140 @@ const ManageRecommendations = () => {
               {getRecommendationByRank(3) && (
                 <button
                   onClick={() => handleDelete(getRecommendationByRank(3)?._id || '', 3)}
+                  disabled={loading}
+                  className="px-4 py-2 rounded-xl bg-red-600/30 text-red-300 border border-red-600/30 hover:bg-red-600/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Rank 4 Recommendation */}
+        <div className="bg-gradient-to-b from-gray-800/50 to-gray-700/30 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50">
+          <div className="flex items-center gap-4 mb-4">
+            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getMedalColor(4)} p-1 border border-gray-700/50 flex items-center justify-center shadow-lg`}>
+              <div className="w-full h-full rounded-full bg-gray-900/80 flex items-center justify-center text-white font-bold text-xl">
+                4
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-purple-400">{getMedalText(4)}</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="rank4BakuganId" className="block text-sm font-medium text-gray-300 mb-1">
+                Select Bakugan
+              </label>
+              <select
+                id="rank4BakuganId"
+                value={rank4BakuganId}
+                onChange={(e) => setRank4BakuganId(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
+              >
+                <option value="">-- Select Bakugan --</option>
+                {bakuganItems.map((bakugan) => (
+                  <option key={bakugan._id} value={bakugan._id}>
+                    {bakugan.names[0]} ({bakugan.size}, {bakugan.element})
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="rank4Reason" className="block text-sm font-medium text-gray-300 mb-1">
+                Reason for Recommendation
+              </label>
+              <textarea
+                id="rank4Reason"
+                value={rank4Reason}
+                onChange={(e) => setRank4Reason(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
+                placeholder="Why is this Bakugan recommended?"
+              ></textarea>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleSubmit(4)}
+                disabled={loading || !rank4BakuganId}
+                className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white font-semibold hover:from-purple-500 hover:to-purple-400 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Saving...' : 'Save Rank 4'}
+              </button>
+              
+              {getRecommendationByRank(4) && (
+                <button
+                  onClick={() => handleDelete(getRecommendationByRank(4)?._id || '', 4)}
+                  disabled={loading}
+                  className="px-4 py-2 rounded-xl bg-red-600/30 text-red-300 border border-red-600/30 hover:bg-red-600/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Rank 5 Recommendation */}
+        <div className="bg-gradient-to-b from-gray-800/50 to-gray-700/30 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50">
+          <div className="flex items-center gap-4 mb-4">
+            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getMedalColor(5)} p-1 border border-gray-700/50 flex items-center justify-center shadow-lg`}>
+              <div className="w-full h-full rounded-full bg-gray-900/80 flex items-center justify-center text-white font-bold text-xl">
+                5
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-teal-400">{getMedalText(5)}</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="rank5BakuganId" className="block text-sm font-medium text-gray-300 mb-1">
+                Select Bakugan
+              </label>
+              <select
+                id="rank5BakuganId"
+                value={rank5BakuganId}
+                onChange={(e) => setRank5BakuganId(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
+              >
+                <option value="">-- Select Bakugan --</option>
+                {bakuganItems.map((bakugan) => (
+                  <option key={bakugan._id} value={bakugan._id}>
+                    {bakugan.names[0]} ({bakugan.size}, {bakugan.element})
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="rank5Reason" className="block text-sm font-medium text-gray-300 mb-1">
+                Reason for Recommendation
+              </label>
+              <textarea
+                id="rank5Reason"
+                value={rank5Reason}
+                onChange={(e) => setRank5Reason(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
+                placeholder="Why is this Bakugan recommended?"
+              ></textarea>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleSubmit(5)}
+                disabled={loading || !rank5BakuganId}
+                className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-teal-500 text-white font-semibold hover:from-teal-500 hover:to-teal-400 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Saving...' : 'Save Rank 5'}
+              </button>
+              
+              {getRecommendationByRank(5) && (
+                <button
+                  onClick={() => handleDelete(getRecommendationByRank(5)?._id || '', 5)}
                   disabled={loading}
                   className="px-4 py-2 rounded-xl bg-red-600/30 text-red-300 border border-red-600/30 hover:bg-red-600/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >

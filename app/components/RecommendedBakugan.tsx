@@ -30,6 +30,11 @@ const RecommendedBakugan = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Function to toggle expanded state
+  const toggleExpanded = () => {
+    setIsExpanded(prevState => !prevState);
+  };
 
   // Fetch recommendations
   useEffect(() => {
@@ -65,6 +70,10 @@ const RecommendedBakugan = () => {
         return 'from-gray-300 to-gray-500'; // Silver
       case 3:
         return 'from-amber-600 to-amber-800'; // Bronze
+      case 4:
+        return 'from-purple-400 to-purple-600'; // Purple
+      case 5:
+        return 'from-teal-400 to-teal-600'; // Teal
       default:
         return 'from-blue-300 to-blue-500';
     }
@@ -79,6 +88,10 @@ const RecommendedBakugan = () => {
         return '🥈';
       case 3:
         return '🥉';
+      case 4:
+        return '💫';
+      case 5:
+        return '⭐';
       default:
         return null;
     }
@@ -93,6 +106,10 @@ const RecommendedBakugan = () => {
         return 'Runner Up';
       case 3:
         return 'Notable Mention';
+      case 4:
+        return 'Great Choice';
+      case 5:
+        return 'Solid Option';
       default:
         return 'Recommended';
     }
@@ -100,7 +117,7 @@ const RecommendedBakugan = () => {
 
   // Base classes for the widget
   const baseClasses = `
-    w-full xl:fixed xl:left-8 xl:top-20 xl:w-80 z-10
+    w-full xl:fixed xl:left-8 xl:top-48 xl:w-80 z-10
     bg-gradient-to-br from-blue-900/40 via-black/40 to-blue-900/40 
     backdrop-blur-md rounded-2xl p-4 border border-blue-500/30 
     shadow-[0_0_15px_rgba(59,130,246,0.15)] 
@@ -179,11 +196,19 @@ const RecommendedBakugan = () => {
             </Link>
           )}
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="text-blue-400 hover:text-blue-300 transition-all duration-300 p-1 hover:bg-blue-500/20 rounded-lg transform hover:scale-110"
+            onClick={toggleExpanded}
+            className="text-blue-400 hover:text-blue-300 transition-all duration-300 p-2 hover:bg-blue-500/20 rounded-lg transform hover:scale-110 cursor-pointer"
             aria-label={isExpanded ? "Show less" : "Show more"}
           >
-            {isExpanded ? '▲' : '▼'}
+            {isExpanded ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            )}
           </button>
         </div>
       </div>
@@ -248,7 +273,7 @@ const RecommendedBakugan = () => {
             </div>
             
             {/* Rank Label */}
-            <div className={`absolute top-0 right-0 py-0.5 px-2 bg-gradient-to-r ${getMedalColor(recommendation.rank)} text-white text-xs font-semibold rounded-bl-lg`}>
+            <div className={`absolute bottom-0 right-0 py-0.5 px-2 bg-gradient-to-r ${getMedalColor(recommendation.rank)} text-white text-xs font-semibold rounded-tl-lg`}>
               {getMedalText(recommendation.rank)}
             </div>
           </div>
@@ -258,18 +283,20 @@ const RecommendedBakugan = () => {
       {/* Show More/Less Button (only if there are more than 3 recommendations) */}
       {recommendations.length > 3 && (
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full mt-3 px-3 py-1.5 rounded-lg bg-blue-600/30 text-blue-300 border border-blue-600/30 hover:bg-blue-600/50 transition-colors text-sm flex items-center justify-center"
+          type="button"
+          onClick={toggleExpanded}
+          className="relative z-20 w-full mt-3 px-3 py-3 rounded-lg bg-blue-600/50 text-blue-200 border border-blue-500/50 hover:bg-blue-600/70 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-sm font-medium flex items-center justify-center cursor-pointer shadow-sm hover:shadow-md"
         >
-          <span>{isExpanded ? 'Show Less' : `Show ${recommendations.length - 3} More`}</span>
-          <svg 
-            className={`w-4 h-4 ml-1 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          {isExpanded ? 'Show Less' : `Show ${recommendations.length - 3} More`}
+          {isExpanded ? (
+            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          )}
         </button>
       )}
       

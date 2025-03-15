@@ -42,10 +42,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate rank is between 1 and 3
-    if (rank < 1 || rank > 3) {
+    // Validate rank is between 1 and 5
+    if (rank < 1 || rank > 5) {
       return NextResponse.json(
-        { error: 'Rank must be between 1 and 3' },
+        { error: 'Rank must be between 1 and 5' },
         { status: 400 }
       );
     }
