@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from './AuthProvider';
 
@@ -30,11 +30,47 @@ const RecommendedBakugan = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [rotation, setRotation] = useState(0);
+  const [autoRotate, setAutoRotate] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   
+  const containerRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number>();
+
   // Function to toggle expanded state
   const toggleExpanded = () => {
     setIsExpanded(prevState => !prevState);
   };
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Animation loop for auto-rotation
+  useEffect(() => {
+    const animate = () => {
+      if (autoRotate) {
+        setRotation(prev => (prev + 0.2) % 360);
+      }
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [autoRotate]);
 
   // Fetch recommendations
   useEffect(() => {
@@ -117,23 +153,20 @@ const RecommendedBakugan = () => {
 
   // Base classes for the widget
   const baseClasses = `
-    w-full xl:fixed xl:left-8 xl:top-48 xl:w-80 z-10
+    w-full z-10 mb-8
     bg-gradient-to-br from-blue-900/40 via-black/40 to-blue-900/40 
     backdrop-blur-md rounded-2xl p-4 border border-blue-500/30 
     shadow-[0_0_15px_rgba(59,130,246,0.15)] 
-    transform hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(59,130,246,0.3)] 
-    animate-float hover:border-blue-400/50
+    hover:shadow-[0_0_20px_rgba(59,130,246,0.25)] 
+    hover:border-blue-400/50
     transition-all duration-300 ease-in-out
-    mb-8 xl:mb-0
+    relative
   `;
 
   if (loading) {
     return (
       <div className={baseClasses}>
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 animate-gradient"></div>
-        <div className="shimmer-wrapper">
-          <div className="shimmer"></div>
-        </div>
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 animate-pulse"></div>
         <h2 className="text-xl font-semibold text-blue-300 mb-4">Recommended Bakugan</h2>
         <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -145,7 +178,7 @@ const RecommendedBakugan = () => {
   if (error) {
     return (
       <div className={baseClasses}>
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 animate-gradient"></div>
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 animate-pulse"></div>
         <h2 className="text-xl font-semibold text-blue-300 mb-4">Recommended Bakugan</h2>
         <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300">
           <p className="font-semibold">Error: {error}</p>
@@ -157,7 +190,7 @@ const RecommendedBakugan = () => {
   if (recommendations.length === 0) {
     return (
       <div className={baseClasses}>
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 animate-gradient"></div>
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 animate-pulse"></div>
         <h2 className="text-xl font-semibold text-blue-300 mb-4">Recommended Bakugan</h2>
         <div className="text-center py-8">
           <p className="text-gray-400">No recommendations available yet.</p>
@@ -176,16 +209,16 @@ const RecommendedBakugan = () => {
 
   return (
     <div className={baseClasses}>
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 animate-gradient"></div>
-      <div className="shimmer-wrapper">
-        <div className="shimmer"></div>
-      </div>
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 animate-pulse"></div>
       
       {/* Header with Toggle Button */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-indigo-300 transition-colors duration-300">
-          Recommended Bakugan
-        </h2>
+        <div className="flex items-center">
+          <span className="text-blue-400 mr-2">🏆</span>
+          <h2 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+            Recommended Bakugan
+          </h2>
+        </div>
         <div className="flex items-center space-x-2">
           {user?.isAdmin && (
             <Link 
@@ -197,15 +230,16 @@ const RecommendedBakugan = () => {
           )}
           <button
             onClick={toggleExpanded}
-            className="text-blue-400 hover:text-blue-300 transition-all duration-300 p-2 hover:bg-blue-500/20 rounded-lg transform hover:scale-110 cursor-pointer"
+            className="text-blue-400 hover:text-blue-300 transition-all duration-200 p-1.5 hover:bg-blue-500/20 rounded-lg flex items-center"
             aria-label={isExpanded ? "Show less" : "Show more"}
           >
+            <span className="mr-1 text-xs">{isExpanded ? "Show Less" : "Show All"}</span>
             {isExpanded ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
               </svg>
             ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             )}
@@ -213,208 +247,132 @@ const RecommendedBakugan = () => {
         </div>
       </div>
       
-      {/* Recommendations List */}
-      <div className="space-y-3 max-h-[70vh] overflow-y-auto custom-scrollbar">
-        {recommendations.slice(0, isExpanded ? recommendations.length : 3).map((recommendation, index) => (
-          <div 
-            key={recommendation._id}
-            style={{ 
-              animationDelay: `${index * 150}ms`,
-              opacity: 0,
-              animation: 'fadeIn 0.5s ease-out forwards'
-            }}
-            className={`relative flex bg-gradient-to-r from-blue-900/30 to-indigo-900/30 rounded-xl border border-blue-700/50 hover:border-blue-500/50 transition-all duration-300 hover:shadow-premium hover:scale-[1.02] overflow-hidden ${index === 0 ? 'animate-spotlight' : ''}`}
-          >
-            {/* Bakugan Image */}
-            <div className="relative w-24 h-24 flex-shrink-0 overflow-hidden">
-              {recommendation.bakuganId.imageUrl ? (
-                <img
-                  src={recommendation.bakuganId.imageUrl}
-                  alt={recommendation.bakuganId.names[0]}
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900/40 to-blue-600/20">
-                  <span className="text-blue-300 text-2xl font-bold">{recommendation.bakuganId.names[0].charAt(0)}</span>
-                </div>
-              )}
+      {/* 3D Carousel Gallery */}
+      <div 
+        className="w-full h-[450px] relative overflow-hidden"
+        ref={containerRef}
+        onMouseEnter={() => setAutoRotate(false)}
+        onMouseLeave={() => setAutoRotate(true)}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-black/80 to-indigo-900/30" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15),transparent_50%)]" />
+        
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative w-full h-full" style={{ perspective: '1500px' }}>
+            {recommendations.slice(0, isExpanded ? recommendations.length : 5).map((recommendation, index) => {
+              const angle = (360 / (isExpanded ? recommendations.length : 5)) * index + rotation;
+              const radian = (angle * Math.PI) / 180;
+              const radius = isMobile ? 150 : 250;
               
-              {/* Rank Medal */}
-              <div className="absolute -top-2 -left-2 z-10">
-                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getMedalColor(recommendation.rank)} p-0.5 border border-gray-700/50 flex items-center justify-center shadow-lg`}>
-                  <div className="w-full h-full rounded-full bg-gray-900/80 flex items-center justify-center text-white text-xs font-bold">
-                    {getMedalEmoji(recommendation.rank) || recommendation.rank}
+              const x = Math.sin(radian) * radius;
+              const z = Math.cos(radian) * radius;
+              const scale = (z + radius) / (radius * 2);
+              
+              return (
+                <div
+                  key={recommendation._id}
+                  className="absolute top-1/2 left-1/2 transition-all duration-300"
+                  style={{
+                    transform: `translate(-50%, -50%) translateX(${x}px) translateZ(${z}px) scale(${0.6 + scale * 0.4})`,
+                    zIndex: Math.round(scale * 100),
+                    opacity: scale
+                  }}
+                  onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                >
+                  <div 
+                    className={`relative w-64 h-80 md:w-72 md:h-96 rounded-xl overflow-hidden shadow-lg transition-all duration-300 ${
+                      hoveredIndex === index ? 'scale-105 shadow-blue-500/30 shadow-xl' : ''
+                    }`}
+                  >
+                    {/* Background glow based on rank */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${getMedalColor(recommendation.rank)} opacity-10`}></div>
+                    
+                    {/* Bakugan Image */}
+                    <div className="absolute inset-0 w-full h-full">
+                      {recommendation.bakuganId.imageUrl ? (
+                        <img
+                          src={recommendation.bakuganId.imageUrl}
+                          alt={recommendation.bakuganId.names[0]}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900/40 to-blue-600/20">
+                          <span className="text-blue-300 text-5xl font-bold">
+                            {recommendation.bakuganId.names[0].charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Overlay gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70"></div>
+                    
+                    {/* Rank Medal */}
+                    <div className="absolute top-3 left-3 z-10">
+                      <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${getMedalColor(recommendation.rank)} flex items-center justify-center shadow-lg`}>
+                        <span className="text-white text-lg font-bold">
+                          {getMedalEmoji(recommendation.rank) || recommendation.rank}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                      <div className="flex space-x-2 mb-2">
+                        <span className="px-2 py-1 bg-blue-500/30 rounded-lg text-xs text-white backdrop-blur-sm border border-blue-500/30">
+                          {recommendation.bakuganId.element}
+                        </span>
+                        <span className="px-2 py-1 bg-indigo-500/30 rounded-lg text-xs text-white backdrop-blur-sm border border-indigo-500/30">
+                          {recommendation.bakuganId.size}
+                        </span>
+                      </div>
+                      
+                      <h3 className="text-lg font-bold text-white mb-1">
+                        {recommendation.bakuganId.names[0]}
+                      </h3>
+                      
+                      <div className="text-sm text-blue-200 mb-2 line-clamp-2">
+                        {recommendation.reason}
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <div className="text-green-400 font-bold">
+                          ฿{recommendation.bakuganId.currentPrice.toLocaleString()}
+                        </div>
+                        <div className="text-xs text-white px-2 py-1 rounded-lg bg-gradient-to-r from-blue-500/50 to-indigo-500/50 backdrop-blur-sm">
+                          {getMedalText(recommendation.rank)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Shine effect */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   </div>
                 </div>
-              </div>
-            </div>
-            
-            {/* Info Section */}
-            <div className="flex-1 p-2 flex flex-col justify-between">
-              <div>
-                <h3 className="text-sm font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-500 to-blue-600 animate-gradient-x truncate">
-                  {recommendation.bakuganId.names[0]}
-                </h3>
-                
-                <div className="flex justify-between items-center mt-1 text-xs">
-                  <span className="text-blue-300">{recommendation.bakuganId.size} • {recommendation.bakuganId.element}</span>
-                </div>
-                
-                <div className="mt-1 text-xs font-bold text-green-300">
-                  ฿{recommendation.bakuganId.currentPrice.toLocaleString()}
-                </div>
-              </div>
-              
-              {recommendation.reason && (
-                <div className="text-xs text-blue-200/80 line-clamp-2 mt-1 italic">
-                  "{recommendation.reason}"
-                </div>
-              )}
-            </div>
-            
-            {/* Rank Label */}
-            <div className={`absolute bottom-0 right-0 py-0.5 px-2 bg-gradient-to-r ${getMedalColor(recommendation.rank)} text-white text-xs font-semibold rounded-tl-lg`}>
-              {getMedalText(recommendation.rank)}
-            </div>
+              );
+            })}
           </div>
-        ))}
+        </div>
       </div>
       
-      {/* Show More/Less Button (only if there are more than 3 recommendations) */}
-      {recommendations.length > 3 && (
-        <button
-          type="button"
-          onClick={toggleExpanded}
-          className="relative z-20 w-full mt-3 px-3 py-3 rounded-lg bg-blue-600/50 text-blue-200 border border-blue-500/50 hover:bg-blue-600/70 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-sm font-medium flex items-center justify-center cursor-pointer shadow-sm hover:shadow-md"
-        >
-          {isExpanded ? 'Show Less' : `Show ${recommendations.length - 3} More`}
-          {isExpanded ? (
-            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-            </svg>
-          ) : (
-            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          )}
-        </button>
+      {/* Show More/Less Button */}
+      {recommendations.length > 5 && (
+        <div className="flex justify-center mt-4">
+          <button
+            type="button"
+            onClick={toggleExpanded}
+            className="px-4 py-1.5 rounded-full bg-blue-600/40 text-blue-200 border border-blue-500/40 hover:bg-blue-600/60 active:scale-[0.98] transition-all duration-300 text-xs font-medium flex items-center"
+          >
+            <span className="flex items-center">
+              {isExpanded ? 'Show Less' : `Show All ${recommendations.length}`}
+              <svg className="w-3.5 h-3.5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+              </svg>
+            </span>
+          </button>
+        </div>
       )}
-      
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px) scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes gradient {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
-
-        .animate-gradient {
-          background-size: 200% 200%;
-          animation: gradient 8s ease infinite;
-        }
-
-        .shimmer-wrapper {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
-          border-radius: 1rem;
-        }
-
-        .shimmer {
-          width: 50%;
-          height: 100%;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(59, 130, 246, 0.1),
-            transparent
-          );
-          position: absolute;
-          top: 0;
-          left: 0;
-          animation: shimmer 3s infinite;
-          transform: skewX(-20deg);
-        }
-
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-150%) skewX(-20deg);
-          }
-          50% {
-            transform: translateX(200%) skewX(-20deg);
-          }
-          100% {
-            transform: translateX(200%) skewX(-20deg);
-          }
-        }
-
-        @keyframes spotlight {
-          0%, 100% {
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
-          }
-          50% {
-            box-shadow: 0 0 25px rgba(59, 130, 246, 0.5);
-          }
-        }
-
-        .animate-spotlight {
-          animation: spotlight 3s ease-in-out infinite;
-        }
-
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: rgba(59, 130, 246, 0.3) transparent;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: rgba(59, 130, 246, 0.3);
-          border-radius: 2px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background-color: rgba(59, 130, 246, 0.5);
-        }
-      `}</style>
     </div>
   );
 };
