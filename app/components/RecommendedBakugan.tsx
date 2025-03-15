@@ -34,12 +34,18 @@ const RecommendedBakugan = () => {
   const [rotation, setRotation] = useState(0);
   const [autoRotate, setAutoRotate] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [rotationOffset, setRotationOffset] = useState(0);
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
+  const [isButtonClicked, setIsButtonClicked] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
 
   // Function to toggle expanded state
   const toggleExpanded = () => {
+    setIsButtonClicked(!isButtonClicked);
     setIsExpanded(prevState => !prevState);
   };
 
@@ -54,11 +60,19 @@ const RecommendedBakugan = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Animation loop for auto-rotation
+  // Animation loop for auto-rotation with smoother motion
   useEffect(() => {
-    const animate = () => {
+    let lastTime = 0;
+    const rotationSpeed = 0.05; // Reduced from 0.2 for smoother rotation
+    
+    const animate = (timestamp: number) => {
+      if (!lastTime) lastTime = timestamp;
+      const deltaTime = timestamp - lastTime;
+      lastTime = timestamp;
+      
       if (autoRotate) {
-        setRotation(prev => (prev + 0.2) % 360);
+        // Use deltaTime to ensure consistent rotation speed regardless of frame rate
+        setRotation(prev => (prev + rotationSpeed * (deltaTime / 16.67)) % 360);
       }
       animationRef.current = requestAnimationFrame(animate);
     };
@@ -228,34 +242,64 @@ const RecommendedBakugan = () => {
               Manage
             </Link>
           )}
-          <button
-            onClick={toggleExpanded}
-            className="text-blue-400 hover:text-blue-300 transition-all duration-200 p-1.5 hover:bg-blue-500/20 rounded-lg flex items-center"
-            aria-label={isExpanded ? "Show less" : "Show more"}
-          >
-            <span className="mr-1 text-xs">{isExpanded ? "Show Less" : "Show All"}</span>
-            {isExpanded ? (
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-              </svg>
-            ) : (
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            )}
-          </button>
         </div>
+        
+        {/* Positioned button to overlap with gallery edge */}
+        <button
+          onClick={toggleExpanded}
+          onMouseEnter={() => setIsButtonHovered(true)}
+          onMouseLeave={() => setIsButtonHovered(false)}
+          className="absolute -right-2 top-0 z-20 transition-all duration-200 hover:scale-105"
+          aria-label={isExpanded ? "Show less" : "Show more"}
+        >
+          <div className="relative">
+            {/* Glow aura effect */}
+            <div className="absolute inset-0 rounded-full bg-blue-500/20 blur-xl animate-pulse-slow"></div>
+            
+            {/* Floating animation */}
+            <div className="animate-float">
+              <img 
+                src={isButtonHovered || isButtonClicked ? "/element/SWITCH TO BAKUGAN.png" : "/element/SWITCH TO BAKUTECH_2.png"}
+                alt={isButtonHovered || isButtonClicked ? "Bakugan" : "BakuTech"}
+                className="w-32 h-36 object-contain relative animate-pulse-glow"
+              />
+            </div>
+          </div>
+        </button>
       </div>
       
-      {/* 3D Carousel Gallery */}
+      {/* Enhanced 3D Carousel Gallery */}
       <div 
-        className="w-full h-[450px] relative overflow-hidden"
+        className="w-full h-[450px] relative overflow-hidden rounded-xl cursor-grab active:cursor-grabbing"
         ref={containerRef}
         onMouseEnter={() => setAutoRotate(false)}
-        onMouseLeave={() => setAutoRotate(true)}
+        onMouseLeave={() => {
+          setIsDragging(false);
+          setAutoRotate(true);
+        }}
+        onMouseDown={(e) => {
+          setIsDragging(true);
+          setStartX(e.clientX);
+          setRotationOffset(rotation);
+        }}
+        onMouseMove={(e) => {
+          if (isDragging) {
+            const sensitivity = 0.5; // Adjust for faster/slower rotation
+            const deltaX = (e.clientX - startX) * sensitivity;
+            setRotation(rotationOffset + deltaX);
+          }
+        }}
+        onMouseUp={() => {
+          setIsDragging(false);
+        }}
       >
+        {/* Premium background effects */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-black/80 to-indigo-900/30" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-5 mix-blend-overlay"></div>
+        
+        {/* Ambient light effect */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[150px] bg-blue-500/10 blur-[80px] rounded-full"></div>
         
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative w-full h-full" style={{ perspective: '1500px' }}>
@@ -271,22 +315,26 @@ const RecommendedBakugan = () => {
               return (
                 <div
                   key={recommendation._id}
-                  className="absolute top-1/2 left-1/2 transition-all duration-300"
+                  className="absolute top-1/2 left-1/2 transition-all duration-500 ease-out will-change-transform"
                   style={{
                     transform: `translate(-50%, -50%) translateX(${x}px) translateZ(${z}px) scale(${0.6 + scale * 0.4})`,
                     zIndex: Math.round(scale * 100),
-                    opacity: scale
+                    opacity: scale,
+                    filter: `drop-shadow(0 ${10 * scale}px ${15 * scale}px rgba(59, 130, 246, ${0.2 * scale}))`
                   }}
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(null)}
                 >
                   <div 
-                    className={`relative w-64 h-80 md:w-72 md:h-96 rounded-xl overflow-hidden shadow-lg transition-all duration-300 ${
-                      hoveredIndex === index ? 'scale-105 shadow-blue-500/30 shadow-xl' : ''
+                    className={`relative w-64 h-80 md:w-72 md:h-96 rounded-xl overflow-hidden shadow-lg transition-all duration-300 ease-out ${
+                      hoveredIndex === index ? 'scale-105 shadow-blue-500/40 shadow-xl' : ''
                     }`}
                   >
-                    {/* Background glow based on rank */}
+                    {/* Enhanced background glow based on rank */}
                     <div className={`absolute inset-0 bg-gradient-to-br ${getMedalColor(recommendation.rank)} opacity-10`}></div>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${getMedalColor(recommendation.rank)} opacity-0 ${
+                      hoveredIndex === index ? 'animate-pulse-slow opacity-20' : ''
+                    }`}></div>
                     
                     {/* Bakugan Image */}
                     <div className="absolute inset-0 w-full h-full">
@@ -305,8 +353,15 @@ const RecommendedBakugan = () => {
                       )}
                     </div>
                     
-                    {/* Overlay gradient */}
+                    {/* Enhanced overlay gradient */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70"></div>
+                    
+                    {/* Premium shine effect */}
+                    <div 
+                      className={`absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 ${
+                        hoveredIndex === index ? 'animate-shine-slow' : ''
+                      }`}
+                    ></div>
                     
                     {/* Rank Medal */}
                     <div className="absolute top-3 left-3 z-10">
@@ -346,8 +401,8 @@ const RecommendedBakugan = () => {
                       </div>
                     </div>
                     
-                    {/* Shine effect */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    {/* Enhanced shine effect */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                   </div>
                 </div>
               );
@@ -358,18 +413,19 @@ const RecommendedBakugan = () => {
       
       {/* Show More/Less Button */}
       {recommendations.length > 5 && (
-        <div className="flex justify-center mt-4">
+        <div className="flex justify-center mt-6">
           <button
             type="button"
             onClick={toggleExpanded}
-            className="px-4 py-1.5 rounded-full bg-blue-600/40 text-blue-200 border border-blue-500/40 hover:bg-blue-600/60 active:scale-[0.98] transition-all duration-300 text-xs font-medium flex items-center"
+            className="transition-all duration-300 hover:scale-105 active:scale-[0.98]"
           >
-            <span className="flex items-center">
-              {isExpanded ? 'Show Less' : `Show All ${recommendations.length}`}
-              <svg className="w-3.5 h-3.5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
-              </svg>
-            </span>
+            <div className="relative">
+              <img 
+                src="/element/switch_2_baku_tech1.webp" 
+                alt="BakuTech" 
+                className="w-32 h-32 object-contain"
+              />
+            </div>
           </button>
         </div>
       )}

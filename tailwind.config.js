@@ -17,6 +17,7 @@ module.exports = {
         'float-delayed': 'float 8s ease-in-out infinite -4s',
         'pulse-slow': 'pulse-slow 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'fade-in': 'fadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+        'shine-slow': 'shine 3s ease-in-out infinite',
       },
       keyframes: {
         'gradient-x': {
@@ -35,6 +36,12 @@ module.exports = {
         'fadeIn': {
           'from': { opacity: '0', transform: 'translateY(20px)' },
           'to': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'shine': {
+          '0%': { opacity: '0', transform: 'translateX(-100%)' },
+          '20%': { opacity: '0.5' },
+          '40%': { opacity: '0.3', transform: 'translateX(100%)' },
+          '100%': { opacity: '0', transform: 'translateX(100%)' },
         },
       },
       backgroundImage: {
