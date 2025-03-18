@@ -4,6 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from './AuthProvider';
 
+interface PricePoint {
+  price: number;
+  timestamp: string;
+  notes?: string;
+  referenceUri?: string;
+}
+
 interface Bakugan {
   _id: string;
   names: string[];
@@ -13,6 +20,7 @@ interface Bakugan {
   imageUrl: string;
   currentPrice: number;
   referenceUri: string;
+  priceHistory?: PricePoint[];
 }
 
 interface Recommendation {
@@ -23,6 +31,14 @@ interface Recommendation {
   createdAt: string;
   updatedAt: string;
 }
+
+// Helper function to get the most recent price
+const getMostRecentPrice = (bakugan: Bakugan): number => {
+  if (bakugan.priceHistory && bakugan.priceHistory.length > 0) {
+    return bakugan.priceHistory[0].price;
+  }
+  return bakugan.currentPrice;
+};
 
 const RecommendedBakugan = () => {
   const { user } = useAuth();
@@ -87,7 +103,7 @@ const RecommendedBakugan = () => {
     };
   }, [autoRotate]);
 
-  // Fetch recommendations
+  // Fetch recommendations and price history
   useEffect(() => {
     const fetchRecommendations = async () => {
       try {
@@ -99,7 +115,25 @@ const RecommendedBakugan = () => {
         }
         
         const data = await response.json();
-        setRecommendations(data);
+        
+        // Fetch price history for each Bakugan
+        const recommendationsWithPriceHistory = await Promise.all(
+          data.map(async (recommendation: Recommendation) => {
+            try {
+              const bakuganResponse = await fetch(`/api/bakugan/${recommendation.bakuganId._id}`);
+              if (bakuganResponse.ok) {
+                const bakuganData = await bakuganResponse.json();
+                // Update the bakuganId with price history
+                recommendation.bakuganId.priceHistory = bakuganData.priceHistory;
+              }
+            } catch (error) {
+              console.error(`Error fetching price history for Bakugan ${recommendation.bakuganId._id}:`, error);
+            }
+            return recommendation;
+          })
+        );
+        
+        setRecommendations(recommendationsWithPriceHistory);
         setError(null);
       } catch (err: any) {
         console.error('Error fetching recommendations:', err);
@@ -269,7 +303,7 @@ const RecommendedBakugan = () => {
       
       {/* Enhanced 3D Carousel Gallery */}
       <div 
-        className="w-full h-[450px] relative overflow-hidden rounded-xl cursor-grab active:cursor-grabbing"
+        className={`w-full h-[450px] relative ${hoveredIndex !== null ? '' : 'overflow-hidden'} rounded-xl cursor-grab active:cursor-grabbing`}
         ref={containerRef}
         onMouseEnter={() => setAutoRotate(false)}
         onMouseLeave={() => {
@@ -326,7 +360,7 @@ const RecommendedBakugan = () => {
                 >
                   <div 
                     className={`relative w-64 h-80 md:w-72 md:h-96 rounded-xl overflow-hidden shadow-lg transition-all duration-300 ease-out ${
-                      hoveredIndex === index ? 'scale-105 shadow-blue-500/40 shadow-xl' : ''
+                      hoveredIndex === index ? 'scale-110 shadow-blue-500/40 shadow-xl z-50 brightness-110' : hoveredIndex !== null ? 'brightness-50' : ''
                     }`}
                   >
                     {/* Enhanced background glow based on rank */}
@@ -361,15 +395,7 @@ const RecommendedBakugan = () => {
                         hoveredIndex === index ? 'animate-shine-slow' : ''
                       }`}
                     ></div>
-                    
-                    {/* Rank Medal */}
-                    <div className="absolute top-3 left-3 z-10">
-                      <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${getMedalColor(recommendation.rank)} flex items-center justify-center shadow-lg`}>
-                        <span className="text-white text-lg font-bold">
-                          {getMedalEmoji(recommendation.rank) || recommendation.rank}
-                        </span>
-                      </div>
-                    </div>
+ 
                     
                     {/* Content */}
                     <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -391,9 +417,9 @@ const RecommendedBakugan = () => {
                       </div>
                       
                       <div className="flex justify-between items-center">
-                        <div className="text-green-400 font-bold">
-                          ฿{recommendation.bakuganId.currentPrice.toLocaleString()}
-                        </div>
+                      <div className="text-green-400 font-bold">
+                        ฿{getMostRecentPrice(recommendation.bakuganId).toLocaleString()}
+                      </div>
                         <div className="text-xs text-white px-2 py-1 rounded-lg bg-gradient-to-r from-blue-500/50 to-indigo-500/50 backdrop-blur-sm">
                           {getMedalText(recommendation.rank)}
                         </div>
