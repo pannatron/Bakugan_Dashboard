@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     // Check if there's a search query
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get('search');
+    const bakutechParam = searchParams.get('bakutech');
     
     if (searchQuery) {
       // Get additional search parameters for size and element
@@ -33,13 +34,25 @@ export async function GET(request: NextRequest) {
         query.element = elementParam;
       }
       
+      // If bakutech=true, filter to only show B3 size
+      if (bakutechParam === 'true') {
+        query.size = 'B3';
+      }
+      
       // Search by name (case-insensitive) and optionally by size and element
       const bakuganItems = await Bakugan.find(query).sort({ updatedAt: -1 }).limit(5);
       
       return NextResponse.json(bakuganItems);
     } else {
       // Get all Bakugan items
-      const bakuganItems = await Bakugan.find({}).sort({ updatedAt: -1 });
+      const query: any = {};
+      
+      // If bakutech=true, filter to only show B3 size
+      if (bakutechParam === 'true') {
+        query.size = 'B3';
+      }
+      
+      const bakuganItems = await Bakugan.find(query).sort({ updatedAt: -1 });
       return NextResponse.json(bakuganItems);
     }
   } catch (error: any) {

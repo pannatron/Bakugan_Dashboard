@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import BakuganCard from '../components/BakuganCard';
+import BakutechRecommendedBakugan from '../components/BakutechRecommendedBakugan';
 import { useAuth } from '../components/AuthProvider';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Bakugan {
   _id: string;
@@ -47,6 +49,7 @@ function BakumaniaContent() {
   const [error, setError] = useState<string | null>(null);
   const [selectedBakugan, setSelectedBakugan] = useState<string | null>(null);
   const [priceHistories, setPriceHistories] = useState<Record<string, PricePoint[]>>({});
+  const [showBakutech, setShowBakutech] = useState(false);
   
   // Filter states
   const [nameFilter, setNameFilter] = useState('');
@@ -590,6 +593,34 @@ function BakumaniaContent() {
         )}
       </div>
       
+      {/* Toggle between Bakugan and BakuTech */}
+      <div className="mb-8">
+        <div className="flex justify-center">
+          <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-full p-1 border border-gray-800/50 inline-flex">
+            <button
+              onClick={() => setShowBakutech(false)}
+              className={`px-6 py-2 rounded-full transition-all duration-300 ${
+                !showBakutech 
+                  ? 'bg-blue-600/50 text-white font-semibold shadow-lg' 
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              Bakugan
+            </button>
+            <button
+              onClick={() => setShowBakutech(true)}
+              className={`px-6 py-2 rounded-full transition-all duration-300 ${
+                showBakutech 
+                  ? 'bg-blue-600/50 text-white font-semibold shadow-lg' 
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              BakuTech
+            </button>
+          </div>
+        </div>
+      </div>
+      
       {/* Admin Link - Only for admins */}
       {user?.isAdmin && (
         <div className="mb-8">
@@ -621,49 +652,55 @@ function BakumaniaContent() {
         </div>
       )}
 
-      {/* Bakugan Cards */}
-      <div className="space-y-8">
-        {filteredItems.length === 0 && !loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-400 text-lg">
-              {user?.isAdmin 
-                ? "No Bakugan items found. Add your first one above!" 
-                : "No Bakugan items found. Please check back later!"}
-            </p>
-          </div>
-        ) : (
-          filteredItems.map((bakugan) => (
-            <div key={bakugan._id} className="relative">
-              {/* Element Icon Overlay */}
-              <div className="absolute -top-3 -right-3 z-10">
-                <div className="w-12 h-12 rounded-full bg-gray-800/80 p-1 border border-gray-700/50 flex items-center justify-center">
-                  {elements.find(e => e.value === bakugan.element) && (
-                    <img 
-                      src={elements.find(e => e.value === bakugan.element)?.image} 
-                      alt={bakugan.element}
-                      className="w-8 h-8 object-contain"
-                    />
-                  )}
-                </div>
-              </div>
-              
-              <BakuganCard
-                id={bakugan._id}
-                names={bakugan.names}
-                size={bakugan.size}
-                element={bakugan.element}
-                specialProperties={bakugan.specialProperties}
-                imageUrl={bakugan.imageUrl}
-                currentPrice={bakugan.currentPrice}
-                referenceUri={bakugan.referenceUri}
-                priceHistory={priceHistories[bakugan._id] || []}
-                onUpdatePrice={handleUpdatePrice}
-                onUpdateDetails={user?.isAdmin ? handleUpdateDetails : undefined}
-              />
+      {/* Content based on toggle */}
+      {showBakutech ? (
+        /* BakuTech Recommendations */
+        <BakutechRecommendedBakugan />
+      ) : (
+        /* Regular Bakugan Cards */
+        <div className="space-y-8">
+          {filteredItems.length === 0 && !loading ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg">
+                {user?.isAdmin 
+                  ? "No Bakugan items found. Add your first one above!" 
+                  : "No Bakugan items found. Please check back later!"}
+              </p>
             </div>
-          ))
-        )}
-      </div>
+          ) : (
+            filteredItems.map((bakugan) => (
+              <div key={bakugan._id} className="relative">
+                {/* Element Icon Overlay */}
+                <div className="absolute -top-3 -right-3 z-10">
+                  <div className="w-12 h-12 rounded-full bg-gray-800/80 p-1 border border-gray-700/50 flex items-center justify-center">
+                    {elements.find(e => e.value === bakugan.element) && (
+                      <img 
+                        src={elements.find(e => e.value === bakugan.element)?.image} 
+                        alt={bakugan.element}
+                        className="w-8 h-8 object-contain"
+                      />
+                    )}
+                  </div>
+                </div>
+                
+                <BakuganCard
+                  id={bakugan._id}
+                  names={bakugan.names}
+                  size={bakugan.size}
+                  element={bakugan.element}
+                  specialProperties={bakugan.specialProperties}
+                  imageUrl={bakugan.imageUrl}
+                  currentPrice={bakugan.currentPrice}
+                  referenceUri={bakugan.referenceUri}
+                  priceHistory={priceHistories[bakugan._id] || []}
+                  onUpdatePrice={handleUpdatePrice}
+                  onUpdateDetails={user?.isAdmin ? handleUpdateDetails : undefined}
+                />
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </main>
   );
 }

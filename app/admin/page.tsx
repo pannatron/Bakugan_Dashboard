@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AddBakuganForm from '@/app/components/AddBakuganForm';
 import ManageRecommendations from '@/app/components/ManageRecommendations';
+import ManageBakutechRecommendations from '@/app/components/ManageBakutechRecommendations';
 import Link from 'next/link';
 
 // Admin page component
@@ -208,6 +209,27 @@ function AdminContent() {
       
       <div className="mb-12">
         <ManageRecommendations />
+      </div>
+      
+      <div className="mb-12">
+        <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-500 to-blue-600 animate-gradient-x mb-6">
+          BakuTech Recommendations
+        </h2>
+        <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50">
+          <p className="text-gray-300 mb-4">
+            Manage your recommended BakuTech items. These will be displayed in the BakuTech recommendations section.
+          </p>
+          <Link 
+            href="/bakumania/admin/add"
+            className="inline-block px-4 py-2 rounded-lg bg-blue-600/30 text-blue-300 border border-blue-600/30 hover:bg-blue-600/50 transition-colors mb-6"
+          >
+            Add New BakuTech
+          </Link>
+          
+          <div className="mt-4">
+            <ManageBakutechRecommendations />
+          </div>
+        </div>
       </div>
     </div>
   );
