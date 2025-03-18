@@ -32,6 +32,10 @@ interface BakutechRecommendation {
   updatedAt: string;
 }
 
+interface BakutechRecommendedBakuganProps {
+  onToggle: () => void;
+}
+
 // Helper function to get the most recent price
 const getMostRecentPrice = (bakugan: Bakugan): number => {
   if (bakugan.priceHistory && bakugan.priceHistory.length > 0) {
@@ -40,7 +44,7 @@ const getMostRecentPrice = (bakugan: Bakugan): number => {
   return bakugan.currentPrice;
 };
 
-const BakutechRecommendedBakugan = () => {
+const BakutechRecommendedBakugan = ({ onToggle }: BakutechRecommendedBakuganProps) => {
   const { user } = useAuth();
   const [recommendations, setRecommendations] = useState<BakutechRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +57,9 @@ const BakutechRecommendedBakugan = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [rotationOffset, setRotationOffset] = useState(0);
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
+  const [isButtonClicked, setIsButtonClicked] = useState(false);
+  const [isBakutech, setIsBakutech] = useState(true);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
@@ -274,6 +281,28 @@ const BakutechRecommendedBakugan = () => {
             </Link>
           )}
         </div>
+        
+        {/* Compact icon button with independent state */}
+        <button
+          onClick={() => {
+            setIsBakutech(!isBakutech);
+            setIsButtonClicked(!isButtonClicked);
+            onToggle();
+          }}
+          onMouseEnter={() => setIsButtonHovered(true)}
+          onMouseLeave={() => setIsButtonHovered(false)}
+          className="ml-2 px-2 py-1 bg-transparent text-blue-400 hover:text-indigo-400 transition-all duration-300 hover:scale-110 relative z-50"
+          aria-label="Switch between Bakugan and BakuTech"
+        >
+          <div className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs font-medium">
+              {isBakutech ? "Switch to Bakugan" : "Switch to BakuTech"}
+            </span>
+          </div>
+        </button>
       </div>
       
       {/* Enhanced 3D Carousel Gallery */}

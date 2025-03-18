@@ -32,6 +32,10 @@ interface Recommendation {
   updatedAt: string;
 }
 
+interface RecommendedBakuganProps {
+  onToggle: () => void;
+}
+
 // Helper function to get the most recent price
 const getMostRecentPrice = (bakugan: Bakugan): number => {
   if (bakugan.priceHistory && bakugan.priceHistory.length > 0) {
@@ -40,7 +44,7 @@ const getMostRecentPrice = (bakugan: Bakugan): number => {
   return bakugan.currentPrice;
 };
 
-const RecommendedBakugan = () => {
+const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
   const { user } = useAuth();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -284,6 +288,7 @@ const RecommendedBakugan = () => {
           onClick={() => {
             setIsBakugan(!isBakugan);
             setIsButtonClicked(!isButtonClicked);
+            onToggle();
           }}
           onMouseEnter={() => setIsButtonHovered(true)}
           onMouseLeave={() => setIsButtonHovered(false)}

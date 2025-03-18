@@ -1,11 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import RecommendedBakugan from './components/RecommendedBakugan';
+import BakutechRecommendedBakugan from './components/BakutechRecommendedBakugan';
 import { useAuth } from './components/AuthProvider';
 import Link from 'next/link';
 
 function HomeContent() {
   const { user } = useAuth();
+  const [showBakutech, setShowBakutech] = useState(false);
+
+  const toggleDisplay = () => {
+    setShowBakutech(prev => !prev);
+  };
 
   return (
     <main className="relative max-w-6xl mx-auto px-4 py-6 sm:px-6 lg:px-8 xl:px-12">
@@ -22,8 +29,24 @@ function HomeContent() {
         </div>
       </div>
 
-      {/* Recommended Bakugan Gallery Section */}
-      <RecommendedBakugan />
+      {/* Recommended Gallery Section - Toggle between Bakugan and BakuTech with smooth transition */}
+      <div className="relative">
+        <div
+          className={`transition-all duration-500 ease-in-out ${
+            showBakutech ? 'opacity-0 scale-95 absolute inset-0 z-0' : 'opacity-100 scale-100 z-10'
+          }`}
+        >
+          <RecommendedBakugan onToggle={toggleDisplay} />
+        </div>
+        
+        <div
+          className={`transition-all duration-500 ease-in-out ${
+            showBakutech ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-95 absolute inset-0 z-0'
+          }`}
+        >
+          <BakutechRecommendedBakugan onToggle={toggleDisplay} />
+        </div>
+      </div>
       
       {/* Link to Bakugan List */}
       <div className="flex justify-center mt-4">

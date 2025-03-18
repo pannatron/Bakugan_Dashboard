@@ -49,7 +49,7 @@ function BakumaniaContent() {
   const [error, setError] = useState<string | null>(null);
   const [selectedBakugan, setSelectedBakugan] = useState<string | null>(null);
   const [priceHistories, setPriceHistories] = useState<Record<string, PricePoint[]>>({});
-  const [showBakutech, setShowBakutech] = useState(false);
+  const [filterMode, setFilterMode] = useState<'all' | 'bakugan' | 'bakutech'>('all'); // Default to showing all
   
   // Filter states
   const [nameFilter, setNameFilter] = useState('');
@@ -79,6 +79,11 @@ function BakumaniaContent() {
       if (nameFilter) params.append('search', nameFilter);
       if (sizeFilter) params.append('size', sizeFilter);
       if (elementFilter) params.append('element', elementFilter);
+      
+      // Add bakutech parameter if in BakuTech view
+      if (filterMode === 'bakutech') {
+        params.append('bakutech', 'true');
+      }
       
       const url = `/api/bakugan${params.toString() ? `?${params.toString()}` : ''}`;
       console.log("Fetching from URL:", url);
@@ -161,6 +166,20 @@ function BakumaniaContent() {
   const applyFilters = useCallback(() => {
     let filtered = [...bakuganItems];
     
+    // Apply filtering based on the selected mode
+    if (filterMode === 'bakutech') {
+      // For BakuTech view, only show B3 size
+      filtered = filtered.filter(item => item.size === 'B3');
+      console.log('BakuTech view: Showing only B3 size:', filtered.length);
+    } else if (filterMode === 'bakugan') {
+      // For regular Bakugan view, filter out B3 size
+      filtered = filtered.filter(item => item.size !== 'B3');
+      console.log('Bakugan view: Filtering out B3 size:', filtered.length);
+    } else {
+      // 'all' mode - show everything
+      console.log('Showing all sizes:', filtered.length);
+    }
+    
     // Filter by element if selected (client-side filtering in addition to server-side)
     if (elementFilter) {
       filtered = filtered.filter(item => 
@@ -214,7 +233,7 @@ function BakumaniaContent() {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [nameFilter, sizeFilter, elementFilter]);
+  }, [nameFilter, sizeFilter, elementFilter, filterMode]);
   
   // Debounced name suggestions
   const debouncedSuggestions = useCallback(() => {
@@ -340,7 +359,7 @@ function BakumaniaContent() {
   useEffect(() => {
     const cleanup = debouncedFetch();
     return cleanup;
-  }, [nameFilter, sizeFilter, elementFilter, debouncedFetch]);
+  }, [nameFilter, sizeFilter, elementFilter, filterMode, debouncedFetch]);
   
   // Fetch name suggestions when name filter changes
   useEffect(() => {
@@ -593,14 +612,24 @@ function BakumaniaContent() {
         )}
       </div>
       
-      {/* Toggle between Bakugan and BakuTech */}
+      {/* Filter buttons: ALL, Bakugan, BakuTech */}
       <div className="mb-8">
         <div className="flex justify-center">
           <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-full p-1 border border-gray-800/50 inline-flex">
             <button
-              onClick={() => setShowBakutech(false)}
+              onClick={() => setFilterMode('all')}
               className={`px-6 py-2 rounded-full transition-all duration-300 ${
-                !showBakutech 
+                filterMode === 'all' 
+                  ? 'bg-blue-600/50 text-white font-semibold shadow-lg' 
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              ALL
+            </button>
+            <button
+              onClick={() => setFilterMode('bakugan')}
+              className={`px-6 py-2 rounded-full transition-all duration-300 ${
+                filterMode === 'bakugan' 
                   ? 'bg-blue-600/50 text-white font-semibold shadow-lg' 
                   : 'text-gray-400 hover:text-gray-300'
               }`}
@@ -608,14 +637,14 @@ function BakumaniaContent() {
               Bakugan
             </button>
             <button
-              onClick={() => setShowBakutech(true)}
+              onClick={() => setFilterMode('bakutech')}
               className={`px-6 py-2 rounded-full transition-all duration-300 ${
-                showBakutech 
+                filterMode === 'bakutech' 
                   ? 'bg-blue-600/50 text-white font-semibold shadow-lg' 
                   : 'text-gray-400 hover:text-gray-300'
               }`}
             >
-              BakuTech
+              Bakutech
             </button>
           </div>
         </div>
@@ -652,13 +681,13 @@ function BakumaniaContent() {
         </div>
       )}
 
-      {/* Content based on toggle */}
-      {showBakutech ? (
-        /* BakuTech Recommendations */
-        <BakutechRecommendedBakugan />
-      ) : (
-        /* Regular Bakugan Cards */
-        <div className="space-y-8">
+      {/* Content based on toggle with smooth transition */}
+      <div className="relative">
+        {/* Regular Bakugan Cards with transition */}
+        <div 
+          className={`space-y-8 transition-all duration-500 ease-in-out opacity-100 scale-100 z-10`}
+        >
+
           {filteredItems.length === 0 && !loading ? (
             <div className="text-center py-12">
               <p className="text-gray-400 text-lg">
@@ -700,7 +729,7 @@ function BakumaniaContent() {
             ))
           )}
         </div>
-      )}
+      </div>
     </main>
   );
 }
