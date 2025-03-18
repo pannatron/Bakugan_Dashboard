@@ -30,10 +30,10 @@ function HomeContent() {
       </div>
 
       {/* Recommended Gallery Section - Toggle between Bakugan and BakuTech with smooth transition */}
-      <div className="relative">
+      <div className="relative z-10">
         <div
           className={`transition-all duration-500 ease-in-out ${
-            showBakutech ? 'opacity-0 scale-95 absolute inset-0 z-0' : 'opacity-100 scale-100 z-10'
+            showBakutech ? 'opacity-0 scale-95 absolute inset-0 z-0 pointer-events-none' : 'opacity-100 scale-100 z-50 pointer-events-auto'
           }`}
         >
           <RecommendedBakugan onToggle={toggleDisplay} />
@@ -41,7 +41,7 @@ function HomeContent() {
         
         <div
           className={`transition-all duration-500 ease-in-out ${
-            showBakutech ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-95 absolute inset-0 z-0'
+            showBakutech ? 'opacity-100 scale-100 z-50 pointer-events-auto' : 'opacity-0 scale-95 absolute inset-0 z-0 pointer-events-none'
           }`}
         >
           <BakutechRecommendedBakugan onToggle={toggleDisplay} />

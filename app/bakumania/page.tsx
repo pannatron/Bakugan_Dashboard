@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import BakuganCard from '../components/BakuganCard';
-import BakutechRecommendedBakugan from '../components/BakutechRecommendedBakugan';
 import { useAuth } from '../components/AuthProvider';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -393,6 +392,7 @@ function BakumaniaContent() {
       fetchAllPriceHistories();
     }
   }, [bakuganItems, priceHistories]);
+
 
   return (
     <main className="relative max-w-6xl mx-auto px-4 py-16 sm:px-6 lg:px-8 xl:px-12">

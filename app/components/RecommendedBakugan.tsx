@@ -206,7 +206,7 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
 
   // Base classes for the widget
   const baseClasses = `
-    w-full z-10 mb-8
+    w-full z-30 mb-8
     bg-gradient-to-br from-blue-900/40 via-black/40 to-blue-900/40 
     backdrop-blur-md rounded-2xl p-4 border border-blue-500/30 
     shadow-[0_0_15px_rgba(59,130,246,0.15)] 
@@ -308,7 +308,7 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
       
       {/* Enhanced 3D Carousel Gallery */}
       <div 
-        className={`w-full h-[450px] relative ${hoveredIndex !== null ? '' : 'overflow-hidden'} rounded-xl cursor-grab active:cursor-grabbing`}
+        className={`w-full h-[450px] relative ${hoveredIndex !== null ? '' : 'overflow-hidden'} rounded-xl cursor-grab active:cursor-grabbing z-50`}
         ref={containerRef}
         onMouseEnter={() => setAutoRotate(false)}
         onMouseLeave={() => {
@@ -316,18 +316,35 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
           setAutoRotate(true);
         }}
         onMouseDown={(e) => {
+          e.preventDefault(); // Prevent default behavior
           setIsDragging(true);
           setStartX(e.clientX);
           setRotationOffset(rotation);
         }}
         onMouseMove={(e) => {
           if (isDragging) {
+            e.preventDefault(); // Prevent default behavior
             const sensitivity = 0.5; // Adjust for faster/slower rotation
             const deltaX = (e.clientX - startX) * sensitivity;
             setRotation(rotationOffset + deltaX);
           }
         }}
         onMouseUp={() => {
+          setIsDragging(false);
+        }}
+        onTouchStart={(e) => {
+          setIsDragging(true);
+          setStartX(e.touches[0].clientX);
+          setRotationOffset(rotation);
+        }}
+        onTouchMove={(e) => {
+          if (isDragging) {
+            const sensitivity = 0.5;
+            const deltaX = (e.touches[0].clientX - startX) * sensitivity;
+            setRotation(rotationOffset + deltaX);
+          }
+        }}
+        onTouchEnd={() => {
           setIsDragging(false);
         }}
       >
@@ -353,15 +370,24 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
               return (
                 <div
                   key={recommendation._id}
-                  className="absolute top-1/2 left-1/2 transition-all duration-500 ease-out will-change-transform"
+                  className="absolute top-1/2 left-1/2 transition-all duration-500 ease-out will-change-transform cursor-pointer"
                   style={{
                     transform: `translate(-50%, -50%) translateX(${x}px) translateZ(${z}px) scale(${0.6 + scale * 0.4})`,
-                    zIndex: Math.round(scale * 100),
+                    zIndex: Math.round(scale * 100) + 40,
                     opacity: scale,
                     filter: `drop-shadow(0 ${10 * scale}px ${15 * scale}px rgba(59, 130, 246, ${0.2 * scale}))`
                   }}
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(null)}
+                  onClick={(e) => {
+                    // Only trigger click if not dragging
+                    if (!isDragging) {
+                      // Navigate to the bakugan details or perform an action when clicked
+                      console.log(`Clicked on ${recommendation.bakuganId.names[0]}`);
+                      // You could add navigation here if needed
+                    }
+                    e.stopPropagation(); // Stop event propagation
+                  }}
                 >
                   <div 
                     className={`relative w-64 h-80 md:w-72 md:h-96 rounded-xl overflow-hidden shadow-lg transition-all duration-300 ease-out ${
