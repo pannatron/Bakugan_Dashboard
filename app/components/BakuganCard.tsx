@@ -248,6 +248,20 @@ const BakuganCard = ({
   
   const priceTrend = calculatePriceTrend();
 
+  // Function to handle chart point clicks
+  const handleChartClick = (event: any, elements: any) => {
+    if (elements && elements.length > 0) {
+      const clickedIndex = elements[0].index;
+      // We need to reverse the index since our chart data is reversed from the original priceHistory
+      const actualIndex = filteredPriceHistory.length - 1 - clickedIndex;
+      const referenceUri = filteredPriceHistory[actualIndex]?.referenceUri;
+      
+      if (referenceUri) {
+        window.open(referenceUri, '_blank', 'noopener,noreferrer');
+      }
+    }
+  };
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -288,10 +302,28 @@ const BakuganCard = ({
           afterLabel: (context: any) => {
             const dataIndex = context.dataIndex;
             const notes = priceHistory[dataIndex]?.notes;
-            return (notes && notes !== 'Price updated via Add form') ? `Notes: ${notes}` : '';
+            const referenceUri = filteredPriceHistory[filteredPriceHistory.length - 1 - dataIndex]?.referenceUri;
+            
+            let tooltipText = '';
+            if (notes && notes !== 'Price updated via Add form') {
+              tooltipText += `Notes: ${notes}`;
+            }
+            
+            if (referenceUri) {
+              if (tooltipText) tooltipText += '\n';
+              tooltipText += 'Click to open reference link';
+            }
+            
+            return tooltipText;
           },
         },
       },
+    },
+    onClick: handleChartClick,
+    // Add cursor style to indicate clickable points
+    onHover: (event: any, elements: any) => {
+      const chartCanvas = event.chart.canvas;
+      chartCanvas.style.cursor = elements && elements.length > 0 ? 'pointer' : 'default';
     },
   };
 
@@ -756,7 +788,13 @@ const BakuganCard = ({
                 
                 <div className="h-72 relative">
                   {priceHistory.length > 0 ? (
-                    <Line data={chartData} options={chartOptions as any} />
+                    <>
+                      <Line data={chartData} options={chartOptions as any} />
+                      <div className="absolute top-0 right-0 text-xs text-gray-400 p-1 bg-gray-900/50 rounded">
+                        {filteredPriceHistory.some(point => point.referenceUri) && 
+                          "Click on data points with references to open links"}
+                      </div>
+                    </>
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <p className="text-gray-400">No price history available</p>
