@@ -789,11 +789,11 @@ const BakuganCard = ({
                 <div className="h-72 relative">
                   {priceHistory.length > 0 ? (
                     <>
-                      <Line data={chartData} options={chartOptions as any} />
-                      <div className="absolute top-0 right-0 text-xs text-gray-400 p-1 bg-gray-900/50 rounded">
+                      <div className="absolute -top-6 right-0 text-xs text-gray-400 p-1 bg-gray-900/50 rounded">
                         {filteredPriceHistory.some(point => point.referenceUri) && 
-                          "Click on data points with references to open links"}
+                          "Click points for links"}
                       </div>
+                      <Line data={chartData} options={chartOptions as any} />
                     </>
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
