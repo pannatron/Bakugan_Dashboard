@@ -121,10 +121,13 @@ function BakumaniaContent() {
       if (sizeFilter) params.append('size', sizeFilter);
       if (elementFilter) params.append('element', elementFilter);
       
-      // Add bakutech parameter if in BakuTech view
-      if (filterMode === 'bakutech') {
-        params.append('bakutech', 'true');
-      }
+    // Add parameters based on filter mode
+    if (filterMode === 'bakutech') {
+      params.append('bakutech', 'true');
+    } else if (filterMode === 'bakugan') {
+      // For regular Bakugan view, exclude B3 size (BakuTech)
+      params.append('excludeSize', 'B3');
+    }
       
       // Add pagination parameters
       params.append('page', pagination.page.toString());
@@ -455,7 +458,7 @@ function BakumaniaContent() {
   // Apply client-side filters when needed
   useEffect(() => {
     applyFilters();
-  }, [bakuganItems, elementFilter, sizeFilter, specialPropertiesFilter, minPriceFilter, maxPriceFilter, applyFilters]);
+  }, [bakuganItems, elementFilter, sizeFilter, specialPropertiesFilter, minPriceFilter, maxPriceFilter, filterMode, applyFilters]);
 
   // Fetch price history when a Bakugan is selected
   useEffect(() => {

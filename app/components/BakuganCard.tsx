@@ -346,7 +346,7 @@ const BakuganCard = ({
             )}
           </div>
           
-          <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-500 to-blue-600 animate-gradient-x mb-2">
+          <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-500 to-blue-600 animate-gradient-x mb-2 uppercase">
             {names && names.length > 0 ? names[0] : 'Unknown Bakugan'}
           </h2>
           
@@ -369,11 +369,11 @@ const BakuganCard = ({
           <div className="grid grid-cols-2 gap-2 mb-4">
             <div className="p-2 rounded-lg bg-gray-800/50 text-center">
               <p className="text-xs text-gray-400">Size</p>
-              <p className="text-sm text-blue-300 font-medium">{size}</p>
+              <p className="text-sm text-blue-300 font-medium uppercase">{size}</p>
             </div>
             <div className="p-2 rounded-lg bg-gray-800/50 text-center">
               <p className="text-xs text-gray-400">Element</p>
-              <p className="text-sm text-blue-300 font-medium">{element}</p>
+              <p className="text-sm text-blue-300 font-medium uppercase">{element}</p>
             </div>
           </div>
           

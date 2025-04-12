@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const sizeParam = searchParams.get('size');
     const elementParam = searchParams.get('element');
     const bakutechParam = searchParams.get('bakutech');
+    const excludeSizeParam = searchParams.get('excludeSize');
     
     // Add pagination parameters
     const page = parseInt(searchParams.get('page') || '1');
@@ -42,6 +43,11 @@ export async function GET(request: NextRequest) {
     // If bakutech=true, filter to only show B3 size
     if (bakutechParam === 'true') {
       query.size = 'B3';
+    }
+    
+    // If excludeSize is provided, exclude that size
+    if (excludeSizeParam) {
+      query.size = { $ne: excludeSizeParam };
     }
     
     // Use lean() for better performance and only select needed fields
