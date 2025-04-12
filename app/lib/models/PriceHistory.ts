@@ -43,6 +43,7 @@ const PriceHistorySchema = new Schema<IPriceHistory>(
 
 // Create indexes
 PriceHistorySchema.index({ bakuganId: 1, timestamp: -1 });
+PriceHistorySchema.index({ bakuganId: 1, timestamp: -1, _id: -1 }); // For our specific query pattern
 
 // Pre-save hook to ensure required fields
 PriceHistorySchema.pre('save', function (next) {

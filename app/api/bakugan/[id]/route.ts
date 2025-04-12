@@ -22,8 +22,8 @@ export async function GET(
 
     await connectDB();
 
-    // Find the Bakugan item
-    const bakugan = await Bakugan.findById(id);
+    // Find the Bakugan item with lean() for better performance
+    const bakugan = await Bakugan.findById(id).lean();
     if (!bakugan) {
       return NextResponse.json(
         { error: 'Bakugan not found' },
@@ -31,16 +31,18 @@ export async function GET(
       );
     }
 
-    // Get price history for this Bakugan
+    // Get price history for this Bakugan with optimized query
     // First sort by timestamp (date) in descending order
     // Then for entries with the same date, sort by _id in descending order
     // This ensures that newer entries (added later) appear first when dates are the same
     const priceHistory = await PriceHistory.find({ bakuganId: id })
+      .select('_id price timestamp notes referenceUri') // Only select needed fields
       .sort({ timestamp: -1, _id: -1 })
+      .limit(20) // Limit to most recent 20 entries for performance
       .lean();
 
     return NextResponse.json({
-      ...bakugan.toObject(),
+      ...bakugan,
       priceHistory,
     });
   } catch (error: any) {

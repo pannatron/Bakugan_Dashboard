@@ -96,9 +96,10 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
           const response = await fetch(`/api/bakugan?search=${encodeURIComponent(names[0])}`);
           if (response.ok) {
             const data = await response.json();
+            const bakuganItems = data.items || [];
             
             // Extract all names from all Bakugan items for suggestions
-            const allNames = data.flatMap((item: BakuganRecommendation) => item.names);
+            const allNames = bakuganItems.flatMap((item: BakuganRecommendation) => item.names);
             // Filter unique names that match the query
             const uniqueNames = Array.from(new Set(allNames))
               .filter((name) => 
@@ -110,7 +111,7 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
             
             // For each Bakugan, fetch its price history
             const bakuganWithHistory = await Promise.all(
-              data.map(async (bakugan: BakuganRecommendation) => {
+              bakuganItems.map(async (bakugan: BakuganRecommendation) => {
                 try {
                   const historyResponse = await fetch(`/api/bakugan/${bakugan._id}`);
                   if (historyResponse.ok) {
@@ -185,10 +186,11 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
       const response = await fetch(searchUrl);
       if (response.ok) {
         const data = await response.json();
-        if (data.length > 0) {
+        const bakuganItems = data.items || [];
+        if (bakuganItems.length > 0) {
           // If there's only one result, select it directly
-          if (data.length === 1) {
-            const bakugan = data[0];
+          if (bakuganItems.length === 1) {
+            const bakugan = bakuganItems[0];
             
             // Fetch price history
             const historyResponse = await fetch(`/api/bakugan/${bakugan._id}`);
@@ -205,7 +207,7 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
           } else {
             // If there are multiple results, set them as recommendations and show the selection UI
             const bakuganWithHistory = await Promise.all(
-              data.map(async (bakugan: BakuganRecommendation) => {
+              bakuganItems.map(async (bakugan: BakuganRecommendation) => {
                 try {
                   const historyResponse = await fetch(`/api/bakugan/${bakugan._id}`);
                   if (historyResponse.ok) {

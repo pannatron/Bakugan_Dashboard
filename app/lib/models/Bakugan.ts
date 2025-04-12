@@ -65,8 +65,15 @@ const BakuganSchema = new Schema<IBakugan>(
   }
 );
 
-// Create indexes
+// Create indexes for frequently queried fields
 BakuganSchema.index({ 'names.0': 1 });
+BakuganSchema.index({ names: 1 }); // For name searches
+BakuganSchema.index({ size: 1 }); // For size filtering
+BakuganSchema.index({ element: 1 }); // For element filtering
+BakuganSchema.index({ specialProperties: 1 }); // For special properties filtering
+BakuganSchema.index({ currentPrice: 1 }); // For price range filtering
+BakuganSchema.index({ updatedAt: -1 }); // For sorting by most recent
+BakuganSchema.index({ 'names.0': 1, size: 1, element: 1 }); // Compound index for the common query pattern
 
 // Pre-save hook to ensure required fields
 BakuganSchema.pre('save', function (next) {

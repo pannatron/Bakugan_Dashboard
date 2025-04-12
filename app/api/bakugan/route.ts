@@ -10,51 +10,60 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB();
     
-    // Check if there's a search query
+    // Get all search parameters
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get('search');
+    const sizeParam = searchParams.get('size');
+    const elementParam = searchParams.get('element');
     const bakutechParam = searchParams.get('bakutech');
     
+    // Add pagination parameters
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const skip = (page - 1) * limit;
+    
+    // Build the query
+    const query: any = {};
+    
+    // Add search query if provided
     if (searchQuery) {
-      // Get additional search parameters for size and element
-      const sizeParam = searchParams.get('size');
-      const elementParam = searchParams.get('element');
-      
-      // Build the query
-      const query: any = {
-        names: { $regex: searchQuery, $options: 'i' }
-      };
-      
-      // Add size and element to query if provided
-      if (sizeParam) {
-        query.size = sizeParam;
-      }
-      
-      if (elementParam) {
-        query.element = elementParam;
-      }
-      
-      // If bakutech=true, filter to only show B3 size
-      if (bakutechParam === 'true') {
-        query.size = 'B3';
-      }
-      
-      // Search by name (case-insensitive) and optionally by size and element
-      const bakuganItems = await Bakugan.find(query).sort({ updatedAt: -1 }).limit(5);
-      
-      return NextResponse.json(bakuganItems);
-    } else {
-      // Get all Bakugan items
-      const query: any = {};
-      
-      // If bakutech=true, filter to only show B3 size
-      if (bakutechParam === 'true') {
-        query.size = 'B3';
-      }
-      
-      const bakuganItems = await Bakugan.find(query).sort({ updatedAt: -1 });
-      return NextResponse.json(bakuganItems);
+      query.names = { $regex: searchQuery, $options: 'i' };
     }
+    
+    // Add size and element to query if provided
+    if (sizeParam) {
+      query.size = sizeParam;
+    }
+    
+    if (elementParam) {
+      query.element = elementParam;
+    }
+    
+    // If bakutech=true, filter to only show B3 size
+    if (bakutechParam === 'true') {
+      query.size = 'B3';
+    }
+    
+    // Use lean() for better performance and only select needed fields
+    const bakuganItems = await Bakugan.find(query)
+      .select('_id names size element specialProperties imageUrl currentPrice referenceUri createdAt updatedAt')
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+      
+    // Get total count for pagination info
+    const totalCount = await Bakugan.countDocuments(query);
+    
+    return NextResponse.json({
+      items: bakuganItems,
+      pagination: {
+        total: totalCount,
+        page,
+        limit,
+        pages: Math.ceil(totalCount / limit)
+      }
+    });
   } catch (error: any) {
     console.error('Error fetching Bakugan items:', error);
     return NextResponse.json(
@@ -160,6 +169,15 @@ if (existingBakugan) {
       currentPrice,
       referenceUri: referenceUri || '',
       date: date, // Use the provided date directly
+    });
+
+    // Create initial price history entry for the new Bakugan
+    await PriceHistory.create({
+      bakuganId: newBakugan._id,
+      price: currentPrice,
+      timestamp: date, // Use the date directly as provided by the client
+      notes: 'Initial price',
+      referenceUri: referenceUri || '',
     });
 
     return NextResponse.json(newBakugan, { status: 201 });

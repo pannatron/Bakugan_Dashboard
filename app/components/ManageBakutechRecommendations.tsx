@@ -53,7 +53,8 @@ const ManageBakutechRecommendations = () => {
           throw new Error('Failed to fetch BakuTech items');
         }
         const bakuganData = await bakuganResponse.json();
-        setBakuganItems(bakuganData);
+        // Handle the new response format which includes items and pagination
+        setBakuganItems(bakuganData.items || []);
         
         // Fetch all BakuTech recommendations
         const recommendationsResponse = await fetch('/api/bakutech-recommendations');
