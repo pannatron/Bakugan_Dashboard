@@ -491,6 +491,68 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
         </div>
       )}
 
+      {/* Similar Bakugan Recommendations - Moved to top */}
+      {!isUpdateMode && names[0]?.trim().length > 2 && recommendations.length > 0 && (
+        <div className="mb-6 bg-gray-800/50 border border-gray-700/50 rounded-xl p-3">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-medium text-blue-300">Similar Bakugan Found:</h3>
+            {isSearching && (
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+            )}
+          </div>
+          
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
+            {recommendations.map((rec) => (
+              <div 
+                key={rec._id} 
+                className="flex-shrink-0 w-[220px] p-2 bg-gray-800/70 hover:bg-gray-700/50 rounded-lg cursor-pointer border border-gray-700/50 hover:border-blue-500/50 transition-all"
+              >
+                {/* Display Bakugan image if available */}
+                {rec.imageUrl && (
+                  <div className="mb-2">
+                    <img 
+                      src={rec.imageUrl} 
+                      alt={rec.names[0]} 
+                      className="w-full h-24 object-contain bg-gray-900/50 rounded-lg"
+                    />
+                  </div>
+                )}
+                
+                <div className="font-medium text-blue-400 uppercase truncate">{rec.names[0]}</div>
+                <div className="text-xs text-gray-400 mb-1">{rec.size} • {rec.element} • {rec.specialProperties || 'Normal'}</div>
+                <div className="text-sm text-gray-300 mb-2">฿{rec.currentPrice.toLocaleString()}</div>
+                
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectBakugan(rec);
+                    }}
+                    className="text-xs px-2 py-1 bg-blue-600/50 hover:bg-blue-500/50 text-blue-300 rounded flex-1"
+                  >
+                    Update
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setNames([...rec.names]);
+                      setSize(rec.size);
+                      setElement(rec.element);
+                      setSpecialProperties(rec.specialProperties || 'Normal');
+                    }}
+                    className="text-xs px-2 py-1 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded flex-1"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         {!isUpdateMode ? (
           <>
@@ -715,105 +777,7 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
               />
             </div>
             
-            {/* Recommendations */}
-            {names[0]?.trim().length > 2 && (
-              <div className="mt-2">
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-sm font-medium text-gray-300">
-                    Similar Bakugan
-                  </label>
-                  {isSearching && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
-                  )}
-                </div>
-                
-                {recommendations.length > 0 ? (
-                  <div className="bg-gray-800/70 border border-gray-700 rounded-lg p-2 max-h-40 overflow-y-auto">
-                    {recommendations.map((rec) => (
-                      <div 
-                        key={rec._id} 
-                        className="p-2 hover:bg-gray-700/50 rounded cursor-pointer mb-1 border-b border-gray-700/50 last:border-0"
-                      >
-                        <div className="flex justify-between">
-                          <div className="font-medium text-blue-400 uppercase">{rec.names[0]}</div>
-                          <div className="text-sm text-gray-400">{rec.size} / {rec.element}</div>
-                        </div>
-                        
-                        {/* Display Bakugan image if available */}
-                        {rec.imageUrl && (
-                          <div className="mt-2 mb-2">
-                            <img 
-                              src={rec.imageUrl} 
-                              alt={rec.names[0]} 
-                              className="w-full h-24 object-contain bg-gray-900/50 rounded-lg"
-                            />
-                          </div>
-                        )}
-                        
-                        {rec.names.length > 1 && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            Also known as: {rec.names.slice(1).join(', ')}
-                          </div>
-                        )}
-                        <div className="flex justify-between items-center mt-1">
-                          <div className="text-sm text-gray-300">
-                            ฿{rec.currentPrice.toLocaleString()} • {rec.specialProperties || 'Normal'}
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSelectBakugan(rec);
-                              }}
-                              className="text-xs px-2 py-1 bg-blue-600/50 hover:bg-blue-500/50 text-blue-300 rounded"
-                            >
-                              Update Price
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setNames([...rec.names]);
-                                setSize(rec.size);
-                                setElement(rec.element);
-                                setSpecialProperties(rec.specialProperties || 'Normal');
-                              }}
-                              className="text-xs px-2 py-1 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded"
-                            >
-                              Copy
-                            </button>
-                          </div>
-                        </div>
-                        
-                        {/* Price History */}
-                        {rec.priceHistory && rec.priceHistory.length > 0 && (
-                          <div className="mt-2 border-t border-gray-700/50 pt-2">
-                            <div className="text-xs text-gray-400 mb-1">Price History:</div>
-                            <div className="max-h-20 overflow-y-auto">
-                              {rec.priceHistory.map((history, index) => (
-                                <div key={index} className="text-xs flex justify-between py-1 border-b border-gray-800/50 last:border-0">
-                                  <div className="text-gray-400">
-                                    {typeof history.timestamp === 'string' && history.timestamp.match(/^\d{4}-\d{2}-\d{2}$/)
-                                      ? history.timestamp // Display the date string directly if it's in YYYY-MM-DD format
-                                      : new Date(history.timestamp).toLocaleDateString()}
-                                  </div>
-                                  <div className="text-gray-300">฿{history.price.toLocaleString()}</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-400 italic">
-                    No similar Bakugan found
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Recommendations section removed from here and moved to the top */}
           </>
         ) : (
           <>
