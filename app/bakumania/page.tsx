@@ -56,6 +56,7 @@ function BakumaniaContent() {
   const [selectedBakugan, setSelectedBakugan] = useState<string | null>(null);
   const [priceHistories, setPriceHistories] = useState<Record<string, PricePoint[]>>({});
   const [filterMode, setFilterMode] = useState<'all' | 'bakugan' | 'bakutech'>('all'); // Default to showing all
+  const [isTransitioning, setIsTransitioning] = useState(false); // Add transition state for smoother loading
   
   // Pagination state
   const [pagination, setPagination] = useState<PaginationInfo>({
@@ -445,9 +446,23 @@ function BakumaniaContent() {
   
   // Apply server-side filters when filter values change or pagination changes
   useEffect(() => {
+    // Set transitioning state to show loading animation
+    setIsTransitioning(true);
     const cleanup = debouncedFetch();
     return cleanup;
   }, [nameFilter, sizeFilter, elementFilter, filterMode, pagination.page, pagination.limit, debouncedFetch]);
+  
+  // Reset transitioning state when bakugan items change
+  useEffect(() => {
+    if (isTransitioning && !loading) {
+      // Add a delay to ensure smooth transition (matching our 500ms duration)
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [bakuganItems, loading, isTransitioning]);
   
   // Fetch name suggestions when name filter changes
   useEffect(() => {
@@ -467,34 +482,67 @@ function BakumaniaContent() {
     }
   }, [selectedBakugan]);
 
-  // Fetch price histories for visible Bakugan items only
+  // Prefetch price histories for visible Bakugan items
   useEffect(() => {
-    const fetchVisiblePriceHistories = async () => {
+    const prefetchPriceHistories = async () => {
+      // Only fetch if we're not in a transitioning state
+      if (isTransitioning) return;
+      
       // Fetch price histories for all visible items
       const visibleBakugan = filteredItems; // No limit - fetch for all visible items
       
-      for (const bakugan of visibleBakugan) {
-        if (!priceHistories[bakugan._id]) {
+      // Create an array of promises for parallel fetching
+      const fetchPromises = visibleBakugan
+        .filter(bakugan => !priceHistories[bakugan._id])
+        .map(async (bakugan) => {
           // Check cache first
           const cacheKey = `priceHistory-${bakugan._id}`;
           const cachedData = getCachedData(cacheKey);
           
           if (cachedData) {
-            setPriceHistories(prev => ({
-              ...prev,
-              [bakugan._id]: cachedData
-            }));
+            return { id: bakugan._id, data: cachedData };
           } else {
-            await fetchPriceHistory(bakugan._id);
+            try {
+              const response = await fetch(`/api/bakugan/${bakugan._id}`);
+              if (response.ok) {
+                const data = await response.json();
+                const priceHistory = data.priceHistory || [];
+                
+                // Store in cache
+                setCachedData(cacheKey, priceHistory);
+                
+                return { id: bakugan._id, data: priceHistory };
+              }
+            } catch (err) {
+              console.error(`Error fetching price history for ${bakugan._id}:`, err);
+            }
+            return null;
           }
+        });
+      
+      // Wait for all fetches to complete
+      const results = await Promise.all(fetchPromises);
+      
+      // Update state with all results at once to minimize re-renders
+      const newHistories = results.reduce<Record<string, PricePoint[]>>((acc, result) => {
+        if (result) {
+          acc[result.id] = result.data;
         }
+        return acc;
+      }, {});
+      
+      if (Object.keys(newHistories).length > 0) {
+        setPriceHistories(prev => ({
+          ...prev,
+          ...newHistories
+        }));
       }
     };
 
     if (filteredItems.length > 0) {
-      fetchVisiblePriceHistories();
+      prefetchPriceHistories();
     }
-  }, [filteredItems, priceHistories, getCachedData]);
+  }, [filteredItems, priceHistories, getCachedData, isTransitioning, setCachedData]);
 
 
   return (
@@ -720,7 +768,10 @@ function BakumaniaContent() {
         <div className="flex justify-center">
           <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-full p-1 border border-gray-800/50 inline-flex">
             <button
-              onClick={() => setFilterMode('all')}
+              onClick={() => {
+                setIsTransitioning(true);
+                setFilterMode('all');
+              }}
               className={`px-6 py-2 rounded-full transition-all duration-300 ${
                 filterMode === 'all' 
                   ? 'bg-blue-600/50 text-white font-semibold shadow-lg' 
@@ -730,7 +781,10 @@ function BakumaniaContent() {
               ALL
             </button>
             <button
-              onClick={() => setFilterMode('bakugan')}
+              onClick={() => {
+                setIsTransitioning(true);
+                setFilterMode('bakugan');
+              }}
               className={`px-6 py-2 rounded-full transition-all duration-300 ${
                 filterMode === 'bakugan' 
                   ? 'bg-blue-600/50 text-white font-semibold shadow-lg' 
@@ -740,7 +794,10 @@ function BakumaniaContent() {
               Bakugan
             </button>
             <button
-              onClick={() => setFilterMode('bakutech')}
+              onClick={() => {
+                setIsTransitioning(true);
+                setFilterMode('bakutech');
+              }}
               className={`px-6 py-2 rounded-full transition-all duration-300 ${
                 filterMode === 'bakutech' 
                   ? 'bg-blue-600/50 text-white font-semibold shadow-lg' 
@@ -786,51 +843,89 @@ function BakumaniaContent() {
 
       {/* Content based on toggle with smooth transition */}
       <div className="relative">
-        {/* Regular Bakugan Cards with transition */}
-        <div 
-          className={`space-y-8 transition-all duration-500 ease-in-out opacity-100 scale-100 z-10`}
-        >
-
-          {filteredItems.length === 0 && !loading ? (
-            <div className="text-center py-12">
-              <p className="text-gray-400 text-lg">
-                {user?.isAdmin 
-                  ? "No Bakugan items found. Add your first one above!" 
-                  : "No Bakugan items found. Please check back later!"}
-              </p>
-            </div>
-          ) : (
-            filteredItems.map((bakugan) => (
-              <div key={bakugan._id} className="relative">
-                {/* Element Icon Overlay */}
-                <div className="absolute -top-3 -right-3 z-10">
-                  <div className="w-12 h-12 rounded-full bg-gray-800/80 p-1 border border-gray-700/50 flex items-center justify-center">
-                    {elements.find(e => e.value === bakugan.element) && (
-                      <img 
-                        src={elements.find(e => e.value === bakugan.element)?.image} 
-                        alt={bakugan.element}
-                        className="w-8 h-8 object-contain"
-                      />
-                    )}
+        {/* Content container with fixed height to prevent layout shifts */}
+        <div className="relative min-h-[500px]" style={{ minHeight: filteredItems.length > 0 ? `${Math.max(500, filteredItems.length * 400)}px` : '500px' }}>
+          {/* Loading Skeleton */}
+          {(loading || isTransitioning) && (
+            <div className="space-y-8 animate-fade-in absolute inset-0 w-full">
+              {[...Array(pagination.limit || 5)].map((_, index) => (
+                <div key={`skeleton-${index}`} className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50 animate-pulse">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {/* Image and Info Skeleton */}
+                    <div className="md:w-1/3">
+                      <div className="relative w-full h-48 md:h-64 mb-4 overflow-hidden rounded-xl bg-gray-800/70"></div>
+                      <div className="h-6 bg-gray-800/70 rounded-lg w-3/4 mb-4"></div>
+                      <div className="grid grid-cols-2 gap-2 mb-4">
+                        <div className="p-2 rounded-lg bg-gray-800/70 h-16"></div>
+                        <div className="p-2 rounded-lg bg-gray-800/70 h-16"></div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-gray-800/70 h-20 mb-4"></div>
+                    </div>
+                    
+                    {/* Chart Skeleton */}
+                    <div className="md:w-2/3">
+                      <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50 mb-6">
+                        <div className="flex justify-between items-center mb-4">
+                          <div className="h-6 bg-gray-800/70 rounded-lg w-1/4"></div>
+                          <div className="h-6 bg-gray-800/70 rounded-lg w-1/5"></div>
+                        </div>
+                        <div className="h-72 bg-gray-800/50 rounded-lg"></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <BakuganCard
-                  id={bakugan._id}
-                  names={bakugan.names}
-                  size={bakugan.size}
-                  element={bakugan.element}
-                  specialProperties={bakugan.specialProperties}
-                  imageUrl={bakugan.imageUrl}
-                  currentPrice={bakugan.currentPrice}
-                  referenceUri={bakugan.referenceUri}
-                  priceHistory={priceHistories[bakugan._id] || []}
-                  onUpdatePrice={handleUpdatePrice}
-                  onUpdateDetails={user?.isAdmin ? handleUpdateDetails : undefined}
-                />
-              </div>
-            ))
+              ))}
+            </div>
           )}
+          
+          {/* Regular Bakugan Cards with transition */}
+          <div 
+            className={`space-y-8 transition-opacity duration-500 ${
+              loading || isTransitioning ? 'opacity-0' : 'opacity-100'
+            }`}
+            style={{ transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
+          >
+            {filteredItems.length === 0 && !loading ? (
+              <div className="text-center py-12">
+                <p className="text-gray-400 text-lg">
+                  {user?.isAdmin 
+                    ? "No Bakugan items found. Add your first one above!" 
+                    : "No Bakugan items found. Please check back later!"}
+                </p>
+              </div>
+            ) : (
+              filteredItems.map((bakugan) => (
+                <div key={bakugan._id} className="relative">
+                  {/* Element Icon Overlay */}
+                  <div className="absolute -top-3 -right-3 z-10">
+                    <div className="w-12 h-12 rounded-full bg-gray-800/80 p-1 border border-gray-700/50 flex items-center justify-center">
+                      {elements.find(e => e.value === bakugan.element) && (
+                        <img 
+                          src={elements.find(e => e.value === bakugan.element)?.image} 
+                          alt={bakugan.element}
+                          className="w-8 h-8 object-contain"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  
+                  <BakuganCard
+                    id={bakugan._id}
+                    names={bakugan.names}
+                    size={bakugan.size}
+                    element={bakugan.element}
+                    specialProperties={bakugan.specialProperties}
+                    imageUrl={bakugan.imageUrl}
+                    currentPrice={bakugan.currentPrice}
+                    referenceUri={bakugan.referenceUri}
+                    priceHistory={priceHistories[bakugan._id] || []}
+                    onUpdatePrice={handleUpdatePrice}
+                    onUpdateDetails={user?.isAdmin ? handleUpdateDetails : undefined}
+                  />
+                </div>
+              ))
+            )}
+          </div>
         </div>
         
         {/* Pagination Controls */}
@@ -848,6 +943,7 @@ function BakumaniaContent() {
                   value={pagination.limit}
                   onChange={(e) => {
                     const newLimit = parseInt(e.target.value);
+                    setIsTransitioning(true);
                     setPagination(prev => ({
                       ...prev,
                       limit: newLimit,
@@ -871,6 +967,7 @@ function BakumaniaContent() {
               <button
                 onClick={() => {
                   if (pagination.page > 1) {
+                    setIsTransitioning(true);
                     setPagination(prev => ({
                       ...prev,
                       page: prev.page - 1
@@ -915,6 +1012,7 @@ function BakumaniaContent() {
                       key={i}
                       onClick={() => {
                         if (pageNum !== pagination.page) {
+                          setIsTransitioning(true);
                           setPagination(prev => ({
                             ...prev,
                             page: pageNum
@@ -939,6 +1037,7 @@ function BakumaniaContent() {
               <button
                 onClick={() => {
                   if (pagination.page < pagination.pages) {
+                    setIsTransitioning(true);
                     setPagination(prev => ({
                       ...prev,
                       page: prev.page + 1

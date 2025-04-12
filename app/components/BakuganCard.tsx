@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -78,6 +78,7 @@ const BakuganCard = ({
   const [notes, setNotes] = useState('');
   const [newReferenceUri, setNewReferenceUri] = useState('');
   const [updateDate, setUpdateDate] = useState(new Date().toISOString().split('T')[0]); // Add date state with current date as default
+  const [isChartLoading, setIsChartLoading] = useState(true); // Add loading state for chart
   
   // Edit form states
   const [editNames, setEditNames] = useState<string[]>([...names]);
@@ -327,8 +328,19 @@ const BakuganCard = ({
     },
   };
 
+  // Set chart as loaded when price history data is available or confirmed empty
+  useEffect(() => {
+    if (priceHistory) {
+      // Short timeout to ensure smooth transition
+      const timer = setTimeout(() => {
+        setIsChartLoading(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [priceHistory]);
+
   return (
-    <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50 hover:border-blue-500/50 transition-all duration-300 hover:shadow-premium hover:-translate-y-1 card-shimmer">
+    <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50 hover:border-blue-500/50 transition-all duration-500 hover:shadow-premium hover:-translate-y-1 card-shimmer animate-fade-in">
       <div className="flex flex-col md:flex-row gap-6">
         {/* Image and Info */}
         <div className="md:w-1/3">
@@ -480,11 +492,11 @@ const BakuganCard = ({
           {!showUpdateForm && !showEditForm && (
             <>
               {/* Price History Chart */}
-              <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50 mb-6">
+              <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50 mb-6 transition-all duration-500">
                 <div className="flex flex-col space-y-3">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold text-blue-300">Price History</h3>
-                    {priceHistory.length > 1 && (
+                    {priceHistory.length > 1 && !isChartLoading && (
                       <div className={`px-2 py-1 rounded-lg text-xs font-medium ${
                         priceTrend.trend === 'up' 
                           ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
@@ -585,7 +597,15 @@ const BakuganCard = ({
                 </div>
                 
                 <div className="h-72 relative">
-                  {priceHistory.length > 0 ? (
+                  {isChartLoading ? (
+                    // Skeleton loading for chart
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-full h-full flex flex-col">
+                        <div className="flex-1 bg-gradient-to-r from-gray-800/30 to-gray-700/20 animate-pulse rounded-lg"></div>
+                        <div className="h-8 mt-2 bg-gradient-to-r from-gray-800/30 to-gray-700/20 animate-pulse rounded-lg"></div>
+                      </div>
+                    </div>
+                  ) : priceHistory.length > 0 ? (
                     <>
                       <div className="absolute -top-6 right-0 text-xs text-gray-400 p-1 bg-gray-900/50 rounded">
                         {filteredPriceHistory.some(point => point.referenceUri) && 
@@ -600,7 +620,7 @@ const BakuganCard = ({
                   )}
                 </div>
                 
-                {filteredPriceHistory.length > 0 && (
+                {!isChartLoading && filteredPriceHistory.length > 0 && (
                   <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
                     <div className="p-2 rounded-lg bg-gray-800/50">
                       <p className="text-gray-400">Lowest</p>
