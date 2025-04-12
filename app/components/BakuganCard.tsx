@@ -476,6 +476,182 @@ const BakuganCard = ({
 
         {/* Chart, Update Form, and Edit Form */}
         <div className="md:w-2/3">
+          {/* Price History Chart - Moved to top position */}
+          {!showUpdateForm && !showEditForm && (
+            <>
+              {/* Price History Chart */}
+              <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50 mb-6">
+                <div className="flex flex-col space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-blue-300">Price History</h3>
+                    {priceHistory.length > 1 && (
+                      <div className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                        priceTrend.trend === 'up' 
+                          ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
+                          : priceTrend.trend === 'down' 
+                            ? 'bg-red-500/20 text-red-300 border border-red-500/30' 
+                            : 'bg-gray-700/50 text-gray-300 border border-gray-600/30'
+                      }`}>
+                        <span className="flex items-center gap-1">
+                          {priceTrend.trend === 'up' && (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          )}
+                          {priceTrend.trend === 'down' && (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          )}
+                          {priceTrend.trend === 'stable' && (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
+                            </svg>
+                          )}
+                          {priceTrend.trend !== 'stable' 
+                            ? `${priceTrend.percentage}% ${priceTrend.trend === 'up' ? 'Increase' : 'Decrease'}` 
+                            : 'Stable Price'
+                          }
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Time period selector */}
+                  {priceHistory.length > 1 && (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setTimePeriod('24h')}
+                        className={`px-2 py-1 text-xs rounded-md ${
+                          timePeriod === '24h' 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        }`}
+                      >
+                        24H
+                      </button>
+                      <button
+                        onClick={() => setTimePeriod('7d')}
+                        className={`px-2 py-1 text-xs rounded-md ${
+                          timePeriod === '7d' 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        }`}
+                      >
+                        7D
+                      </button>
+                      <button
+                        onClick={() => setTimePeriod('1m')}
+                        className={`px-2 py-1 text-xs rounded-md ${
+                          timePeriod === '1m' 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        }`}
+                      >
+                        1M
+                      </button>
+                      <button
+                        onClick={() => setTimePeriod('3m')}
+                        className={`px-2 py-1 text-xs rounded-md ${
+                          timePeriod === '3m' 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        }`}
+                      >
+                        3M
+                      </button>
+                      <button
+                        onClick={() => setTimePeriod('1y')}
+                        className={`px-2 py-1 text-xs rounded-md ${
+                          timePeriod === '1y' 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        }`}
+                      >
+                        1Y
+                      </button>
+                      <button
+                        onClick={() => setTimePeriod('all')}
+                        className={`px-2 py-1 text-xs rounded-md ${
+                          timePeriod === 'all' 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        }`}
+                      >
+                        ALL
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="h-72 relative">
+                  {priceHistory.length > 0 ? (
+                    <>
+                      <div className="absolute -top-6 right-0 text-xs text-gray-400 p-1 bg-gray-900/50 rounded">
+                        {filteredPriceHistory.some(point => point.referenceUri) && 
+                          "Click points for links"}
+                      </div>
+                      <Line data={chartData} options={chartOptions as any} />
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <p className="text-gray-400">No price history available</p>
+                    </div>
+                  )}
+                </div>
+                
+                {filteredPriceHistory.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="p-2 rounded-lg bg-gray-800/50">
+                      <p className="text-gray-400">Lowest</p>
+                      <p className="text-blue-300 font-medium">
+                        ฿{Math.min(...filteredPriceHistory.map(p => p.price)).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-gray-800/50">
+                      <p className="text-gray-400">Average</p>
+                      <p className="text-blue-300 font-medium">
+                        ฿{(filteredPriceHistory.reduce((sum, p) => sum + p.price, 0) / filteredPriceHistory.length).toLocaleString(undefined, {maximumFractionDigits: 2})}
+                      </p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-gray-800/50">
+                      <p className="text-gray-400">Highest</p>
+                      <p className="text-blue-300 font-medium">
+                        ฿{Math.max(...filteredPriceHistory.map(p => p.price)).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Toggle Button for Price History Table */}
+              {priceHistory.length > 0 && (
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => setShowPriceHistory(!showPriceHistory)}
+                    className="px-3 py-1 rounded-lg bg-gray-800 text-sm text-gray-300 hover:bg-gray-700 transition-colors flex items-center gap-1"
+                  >
+                    {showPriceHistory ? (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        Hide Details
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        Show Details
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+          
           {showUpdateForm && user?.isAdmin ? (
             <div className="bg-gradient-to-b from-gray-800/50 to-gray-700/30 backdrop-blur-xl rounded-xl p-6 border border-gray-700/50 animate-fade-in">
               <h3 className="text-lg font-semibold text-blue-300 mb-4">Update Price</h3>
@@ -680,178 +856,7 @@ const BakuganCard = ({
               </form>
             </div>
           ) : (
-            <>
-              {/* Price History Chart */}
-              <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50 mb-6">
-                <div className="flex flex-col space-y-3">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-blue-300">Price History</h3>
-                    {priceHistory.length > 1 && (
-                      <div className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                        priceTrend.trend === 'up' 
-                          ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
-                          : priceTrend.trend === 'down' 
-                            ? 'bg-red-500/20 text-red-300 border border-red-500/30' 
-                            : 'bg-gray-700/50 text-gray-300 border border-gray-600/30'
-                      }`}>
-                        <span className="flex items-center gap-1">
-                          {priceTrend.trend === 'up' && (
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                            </svg>
-                          )}
-                          {priceTrend.trend === 'down' && (
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          )}
-                          {priceTrend.trend === 'stable' && (
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
-                            </svg>
-                          )}
-                          {priceTrend.trend !== 'stable' 
-                            ? `${priceTrend.percentage}% ${priceTrend.trend === 'up' ? 'Increase' : 'Decrease'}` 
-                            : 'Stable Price'
-                          }
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Time period selector */}
-                  {priceHistory.length > 1 && (
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => setTimePeriod('24h')}
-                        className={`px-2 py-1 text-xs rounded-md ${
-                          timePeriod === '24h' 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                        }`}
-                      >
-                        24H
-                      </button>
-                      <button
-                        onClick={() => setTimePeriod('7d')}
-                        className={`px-2 py-1 text-xs rounded-md ${
-                          timePeriod === '7d' 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                        }`}
-                      >
-                        7D
-                      </button>
-                      <button
-                        onClick={() => setTimePeriod('1m')}
-                        className={`px-2 py-1 text-xs rounded-md ${
-                          timePeriod === '1m' 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                        }`}
-                      >
-                        1M
-                      </button>
-                      <button
-                        onClick={() => setTimePeriod('3m')}
-                        className={`px-2 py-1 text-xs rounded-md ${
-                          timePeriod === '3m' 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                        }`}
-                      >
-                        3M
-                      </button>
-                      <button
-                        onClick={() => setTimePeriod('1y')}
-                        className={`px-2 py-1 text-xs rounded-md ${
-                          timePeriod === '1y' 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                        }`}
-                      >
-                        1Y
-                      </button>
-                      <button
-                        onClick={() => setTimePeriod('all')}
-                        className={`px-2 py-1 text-xs rounded-md ${
-                          timePeriod === 'all' 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                        }`}
-                      >
-                        ALL
-                      </button>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="h-72 relative">
-                  {priceHistory.length > 0 ? (
-                    <>
-                      <div className="absolute -top-6 right-0 text-xs text-gray-400 p-1 bg-gray-900/50 rounded">
-                        {filteredPriceHistory.some(point => point.referenceUri) && 
-                          "Click points for links"}
-                      </div>
-                      <Line data={chartData} options={chartOptions as any} />
-                    </>
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <p className="text-gray-400">No price history available</p>
-                    </div>
-                  )}
-                </div>
-                
-                {filteredPriceHistory.length > 0 && (
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="p-2 rounded-lg bg-gray-800/50">
-                      <p className="text-gray-400">Lowest</p>
-                      <p className="text-blue-300 font-medium">
-                        ฿{Math.min(...filteredPriceHistory.map(p => p.price)).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-gray-800/50">
-                      <p className="text-gray-400">Average</p>
-                      <p className="text-blue-300 font-medium">
-                        ฿{(filteredPriceHistory.reduce((sum, p) => sum + p.price, 0) / filteredPriceHistory.length).toLocaleString(undefined, {maximumFractionDigits: 2})}
-                      </p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-gray-800/50">
-                      <p className="text-gray-400">Highest</p>
-                      <p className="text-blue-300 font-medium">
-                        ฿{Math.max(...filteredPriceHistory.map(p => p.price)).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Toggle Button for Price History Table */}
-              {priceHistory.length > 0 && (
-                <div className="flex justify-end mb-4">
-                  <button
-                    onClick={() => setShowPriceHistory(!showPriceHistory)}
-                    className="px-3 py-1 rounded-lg bg-gray-800 text-sm text-gray-300 hover:bg-gray-700 transition-colors flex items-center gap-1"
-                  >
-                    {showPriceHistory ? (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                        Hide Details
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                        Show Details
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-            </>
+            <></>
           )}
 
           {/* Price History Table - With scrollbar */}

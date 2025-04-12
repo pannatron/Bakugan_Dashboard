@@ -61,7 +61,7 @@ function BakumaniaContent() {
   const [pagination, setPagination] = useState<PaginationInfo>({
     total: 0,
     page: 1,
-    limit: 20,
+    limit: 5, // Changed from 20 to 5 to show fewer items per page
     pages: 0
   });
   
@@ -470,8 +470,8 @@ function BakumaniaContent() {
   // Fetch price histories for visible Bakugan items only
   useEffect(() => {
     const fetchVisiblePriceHistories = async () => {
-      // Only fetch price histories for items that are currently visible
-      const visibleBakugan = filteredItems.slice(0, 5); // Limit to first 5 items for initial view
+      // Fetch price histories for all visible items
+      const visibleBakugan = filteredItems; // No limit - fetch for all visible items
       
       for (const bakugan of visibleBakugan) {
         if (!priceHistories[bakugan._id]) {
@@ -858,6 +858,7 @@ function BakumaniaContent() {
                   }}
                   className="bg-gray-800/70 border border-gray-700 rounded-lg text-sm text-gray-300 px-2 py-1"
                 >
+                  <option value="5">5</option>
                   <option value="10">10</option>
                   <option value="20">20</option>
                   <option value="50">50</option>
