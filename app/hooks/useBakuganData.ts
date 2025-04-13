@@ -96,13 +96,11 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
       [key]: value
     }));
     
-    // Reset to first page when filter changes
-    if (key !== 'filterMode') {
-      setPagination(prev => ({
-        ...prev,
-        page: 1
-      }));
-    }
+    // Always reset to first page when any filter changes
+    setPagination(prev => ({
+      ...prev,
+      page: 1
+    }));
     
     // Set transitioning state to show loading animation
     setIsTransitioning(true);
