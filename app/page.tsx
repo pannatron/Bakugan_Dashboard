@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 function HomeContent() {
   const { user } = useAuth();
-  const [showBakutech, setShowBakutech] = useState(false);
+  const [showBakutech, setShowBakutech] = useState(true);
 
   const toggleDisplay = () => {
     setShowBakutech(prev => !prev);
