@@ -17,6 +17,9 @@ export async function GET(request: NextRequest) {
     const elementParam = searchParams.get('element');
     const bakutechParam = searchParams.get('bakutech');
     const excludeSizeParam = searchParams.get('excludeSize');
+    const specialPropertiesParam = searchParams.get('specialProperties');
+    const minPriceParam = searchParams.get('minPrice');
+    const maxPriceParam = searchParams.get('maxPrice');
     
     // Add pagination parameters
     const page = parseInt(searchParams.get('page') || '1');
@@ -48,6 +51,24 @@ export async function GET(request: NextRequest) {
     // If excludeSize is provided, exclude that size
     if (excludeSizeParam) {
       query.size = { $ne: excludeSizeParam };
+    }
+    
+    // Add special properties filter if provided
+    if (specialPropertiesParam) {
+      query.specialProperties = specialPropertiesParam;
+    }
+    
+    // Add price range filters if provided
+    if (minPriceParam || maxPriceParam) {
+      query.currentPrice = {};
+      
+      if (minPriceParam) {
+        query.currentPrice.$gte = parseFloat(minPriceParam);
+      }
+      
+      if (maxPriceParam) {
+        query.currentPrice.$lte = parseFloat(maxPriceParam);
+      }
     }
     
     // Use lean() for better performance and only select needed fields

@@ -111,29 +111,29 @@ function BakumaniaContent() {
     }));
   }, []);
 
-  // Fetch Bakugan items with pagination
+  // Fetch Bakugan items with server-side pagination and filtering
   const fetchBakuganItems = async () => {
     try {
       setLoading(true);
       
-      // Build query parameters for API filtering
       const params = new URLSearchParams();
+      
+      // Add all filter parameters
       if (nameFilter) params.append('search', nameFilter);
       if (sizeFilter) params.append('size', sizeFilter);
       if (elementFilter) params.append('element', elementFilter);
+      if (filterMode === 'bakutech') params.append('bakutech', 'true');
+      else if (filterMode === 'bakugan') params.append('excludeSize', 'B3');
       
-    // Add parameters based on filter mode
-    if (filterMode === 'bakutech') {
-      params.append('bakutech', 'true');
-    } else if (filterMode === 'bakugan') {
-      // For regular Bakugan view, exclude B3 size (BakuTech)
-      params.append('excludeSize', 'B3');
-    }
+      // Add price filters if needed (these would need to be added to the API route)
+      if (minPriceFilter) params.append('minPrice', minPriceFilter);
+      if (maxPriceFilter) params.append('maxPrice', maxPriceFilter);
+      if (specialPropertiesFilter) params.append('specialProperties', specialPropertiesFilter);
       
       // Add pagination parameters
-      params.append('page', pagination.page.toString());
       params.append('limit', pagination.limit.toString());
-      
+      params.append('page', pagination.page.toString());
+
       const url = `/api/bakugan${params.toString() ? `?${params.toString()}` : ''}`;
       console.log("Fetching from URL:", url);
       
@@ -143,7 +143,7 @@ function BakumaniaContent() {
       
       if (cachedData) {
         console.log("Using cached data for:", url);
-        setBakuganItems(cachedData.items);
+        setFilteredItems(cachedData.items);
         setPagination(cachedData.pagination);
         setError(null);
         setLoading(false);
@@ -162,7 +162,10 @@ function BakumaniaContent() {
       // Store in cache
       setCachedData(cacheKey, data);
       
-      setBakuganItems(data.items || []);
+      // Set filtered items directly from API response
+      setFilteredItems(data.items || []);
+      
+      // Update pagination from server response
       if (data.pagination) {
         setPagination(data.pagination);
       }
@@ -235,70 +238,7 @@ function BakumaniaContent() {
     };
   }, []);
   
-  // Apply client-side filters (for all filters to ensure they work correctly)
-  const applyFilters = useCallback(() => {
-    let filtered = [...bakuganItems];
-    
-    // Apply filtering based on the selected mode
-    if (filterMode === 'bakutech') {
-      // For BakuTech view, only show B3 size
-      filtered = filtered.filter(item => item.size === 'B3');
-      console.log('BakuTech view: Showing only B3 size:', filtered.length);
-    } else if (filterMode === 'bakugan') {
-      // For regular Bakugan view, filter out B3 size
-      filtered = filtered.filter(item => item.size !== 'B3');
-      console.log('Bakugan view: Filtering out B3 size:', filtered.length);
-    } else {
-      // 'all' mode - show everything
-      console.log('Showing all sizes:', filtered.length);
-    }
-    
-    // Filter by element if selected (client-side filtering in addition to server-side)
-    if (elementFilter) {
-      filtered = filtered.filter(item => 
-        item.element === elementFilter
-      );
-      console.log(`After element filter (${elementFilter}):`, filtered.length);
-    }
-    
-    // Filter by size if selected (client-side filtering in addition to server-side)
-    if (sizeFilter) {
-      filtered = filtered.filter(item => 
-        item.size === sizeFilter
-      );
-      console.log(`After size filter (${sizeFilter}):`, filtered.length);
-    }
-    
-    // Filter by special properties if selected
-    if (specialPropertiesFilter) {
-      filtered = filtered.filter(item => 
-        item.specialProperties === specialPropertiesFilter
-      );
-      console.log(`After special properties filter (${specialPropertiesFilter}):`, filtered.length);
-    }
-    
-    // Filter by price range
-    if (minPriceFilter) {
-      const minPrice = parseFloat(minPriceFilter);
-      if (!isNaN(minPrice)) {
-        filtered = filtered.filter(item => item.currentPrice >= minPrice);
-      }
-      console.log(`After min price filter (${minPriceFilter}):`, filtered.length);
-    }
-    
-    if (maxPriceFilter) {
-      const maxPrice = parseFloat(maxPriceFilter);
-      if (!isNaN(maxPrice)) {
-        filtered = filtered.filter(item => item.currentPrice <= maxPrice);
-      }
-      console.log(`After max price filter (${maxPriceFilter}):`, filtered.length);
-    }
-    
-    setFilteredItems(filtered);
-    console.log("Applied filters:", { elementFilter, sizeFilter, specialPropertiesFilter, minPriceFilter, maxPriceFilter });
-    console.log("Filtered items:", filtered.length);
-  }, [bakuganItems, elementFilter, sizeFilter, specialPropertiesFilter, minPriceFilter, maxPriceFilter]);
-  
+  // No need for client-side filtering anymore as we're using server-side filtering
   // Debounced search function
   const debouncedFetch = useCallback(() => {
     const timeoutId = setTimeout(() => {
@@ -306,7 +246,7 @@ function BakumaniaContent() {
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [nameFilter, sizeFilter, elementFilter, filterMode, pagination.page, pagination.limit]);
+  }, [nameFilter, sizeFilter, elementFilter, specialPropertiesFilter, minPriceFilter, maxPriceFilter, filterMode, pagination.page, pagination.limit]);
   
   // Debounced name suggestions
   const debouncedSuggestions = useCallback(() => {
@@ -450,9 +390,9 @@ function BakumaniaContent() {
     setIsTransitioning(true);
     const cleanup = debouncedFetch();
     return cleanup;
-  }, [nameFilter, sizeFilter, elementFilter, filterMode, pagination.page, pagination.limit, debouncedFetch]);
+  }, [nameFilter, sizeFilter, elementFilter, specialPropertiesFilter, minPriceFilter, maxPriceFilter, filterMode, pagination.page, pagination.limit, debouncedFetch]);
   
-  // Reset transitioning state when bakugan items change
+  // Reset transitioning state when filtered items change
   useEffect(() => {
     if (isTransitioning && !loading) {
       // Add a delay to ensure smooth transition (matching our 500ms duration)
@@ -462,7 +402,7 @@ function BakumaniaContent() {
       
       return () => clearTimeout(timer);
     }
-  }, [bakuganItems, loading, isTransitioning]);
+  }, [filteredItems, loading, isTransitioning]);
   
   // Fetch name suggestions when name filter changes
   useEffect(() => {
@@ -470,10 +410,7 @@ function BakumaniaContent() {
     return cleanup;
   }, [nameFilter, debouncedSuggestions]);
   
-  // Apply client-side filters when needed
-  useEffect(() => {
-    applyFilters();
-  }, [bakuganItems, elementFilter, sizeFilter, specialPropertiesFilter, minPriceFilter, maxPriceFilter, filterMode, applyFilters]);
+  // No need for client-side filtering anymore
 
   // Fetch price history when a Bakugan is selected
   useEffect(() => {
