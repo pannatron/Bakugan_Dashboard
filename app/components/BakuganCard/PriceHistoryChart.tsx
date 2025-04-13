@@ -314,8 +314,8 @@ const PriceHistoryChart = ({
         </div>
         
         <div className="h-72 relative">
-          {isChartLoading ? (
-            // Skeleton loading for chart
+          {isChartLoading && priceHistory.length > 0 ? (
+            // Skeleton loading for chart - only show if we have price history data
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-full h-full flex flex-col">
                 <div className="flex-1 bg-gradient-to-r from-gray-800/30 to-gray-700/20 animate-pulse rounded-lg"></div>

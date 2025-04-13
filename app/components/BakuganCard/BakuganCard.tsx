@@ -54,15 +54,16 @@ const BakuganCard = ({
 
   // Set chart as loaded when price history data is available or confirmed empty
   useEffect(() => {
-    // Always start with loading state true
-    setIsChartLoading(true);
-    
-    if (priceHistory) {
+    // Only set loading state if we have price history data
+    if (priceHistory && priceHistory.length > 0) {
       // Short timeout to ensure smooth transition and complete loading
       const timer = setTimeout(() => {
         setIsChartLoading(false);
       }, 800); // Increased timeout to ensure data is fully loaded
       return () => clearTimeout(timer);
+    } else {
+      // If there's no price history, don't show loading state
+      setIsChartLoading(false);
     }
   }, [priceHistory]);
 

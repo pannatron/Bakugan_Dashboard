@@ -27,8 +27,11 @@ const PriceDisplay = ({
           </svg>
         </span>
         <div className="relative">
-          <div className={`w-20 h-6 bg-gradient-to-r from-green-600/20 to-green-400/20 animate-pulse rounded-lg ${!isChartLoading ? 'hidden' : ''}`}></div>
-          <span className={`text-lg ${isChartLoading ? 'invisible absolute' : ''}`}>฿{priceHistory.length > 0 ? priceHistory[0].price.toLocaleString() : currentPrice.toLocaleString()}</span>
+          {isChartLoading && priceHistory.length > 0 ? (
+            <div className="w-20 h-6 bg-gradient-to-r from-green-600/20 to-green-400/20 animate-pulse rounded-lg"></div>
+          ) : (
+            <span className="text-lg">฿{priceHistory.length > 0 ? priceHistory[0].price.toLocaleString() : currentPrice.toLocaleString()}</span>
+          )}
         </div>
       </div>
       
