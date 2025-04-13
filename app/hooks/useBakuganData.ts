@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Bakugan, PaginationInfo, PricePoint } from '../types/bakugan';
 
 interface CacheItem {
@@ -36,6 +36,9 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
   const [selectedBakugan, setSelectedBakugan] = useState<string | null>(null);
   const [priceHistories, setPriceHistories] = useState<Record<string, PricePoint[]>>({});
   const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  // Use a ref to track if a fetch is in progress to prevent double fetching
+  const isFetchingRef = useRef(false);
   
   // Pagination state
   const [pagination, setPagination] = useState<PaginationInfo>({
@@ -101,6 +104,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
       }));
     }
     
+    // Set transitioning state to show loading animation
     setIsTransitioning(true);
   }, []);
 
@@ -137,6 +141,13 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
 
   // Fetch Bakugan items with server-side pagination and filtering
   const fetchBakuganItems = useCallback(async () => {
+    // Prevent double fetching
+    if (isFetchingRef.current) {
+      return;
+    }
+    
+    isFetchingRef.current = true;
+    
     try {
       setLoading(true);
       
@@ -171,6 +182,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
         setPagination(cachedData.pagination);
         setError(null);
         setLoading(false);
+        isFetchingRef.current = false;
         return;
       }
       
@@ -214,6 +226,13 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
       setError(err.message || 'Failed to fetch Bakugan items');
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
+      
+      // Add a delay before resetting the transitioning state
+      // This ensures the loading animation completes smoothly
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 800);
     }
   }, [filters, pagination, getCachedData, setCachedData]);
 
@@ -419,30 +438,13 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
   
   // Apply server-side filters when filter values change or pagination changes
   useEffect(() => {
-    // Only set transitioning if we're not already loading
-    if (!loading) {
-      setIsTransitioning(true);
-    }
-    
-    // Use a longer debounce to ensure we don't have multiple loading states in quick succession
+    // Use a debounce to prevent rapid fetching
     const timeoutId = setTimeout(() => {
       fetchBakuganItems();
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [filters, pagination.page, pagination.limit, fetchBakuganItems, loading]);
-  
-  // Reset transitioning state when filtered items change
-  useEffect(() => {
-    if (isTransitioning && !loading) {
-      // Use a longer delay for the transition to complete
-      const timer = setTimeout(() => {
-        setIsTransitioning(false);
-      }, 1200);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [filteredItems, loading, isTransitioning]);
+  }, [filters, pagination.page, pagination.limit, fetchBakuganItems]);
   
   // Fetch name suggestions when name filter changes
   useEffect(() => {

@@ -82,7 +82,7 @@ export default function BakuganList({
         <div className="relative min-h-[500px]" style={{ minHeight: filteredItems.length > 0 ? `${Math.max(500, filteredItems.length * 400)}px` : '500px' }}>
           {/* Loading Skeleton */}
           {(loading || isTransitioning) && (
-            <div className="space-y-8 absolute inset-0 w-full transition-opacity duration-500 ease-in-out z-10">
+            <div className="space-y-8 absolute inset-0 w-full z-10">
               {[...Array(pagination.limit || 5)].map((_, index) => (
                 <div key={`skeleton-${index}`} className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50 animate-pulse">
                   <div className="flex flex-col md:flex-row gap-6">
@@ -113,12 +113,11 @@ export default function BakuganList({
             </div>
           )}
           
-          {/* Regular Bakugan Cards with transition */}
+          {/* Regular Bakugan Cards */}
           <div 
-            className={`space-y-8 transition-all duration-1000 ${
-              loading || isTransitioning ? 'opacity-0 invisible' : 'opacity-100 visible'
+            className={`space-y-8 ${
+              loading || isTransitioning ? 'hidden' : 'block'
             }`}
-            style={{ transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
           >
             {filteredItems.length === 0 && !loading ? (
               <div className="text-center py-12">
