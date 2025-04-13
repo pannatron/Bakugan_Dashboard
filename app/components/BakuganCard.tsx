@@ -330,11 +330,14 @@ const BakuganCard = ({
 
   // Set chart as loaded when price history data is available or confirmed empty
   useEffect(() => {
+    // Always start with loading state true
+    setIsChartLoading(true);
+    
     if (priceHistory) {
-      // Short timeout to ensure smooth transition
+      // Short timeout to ensure smooth transition and complete loading
       const timer = setTimeout(() => {
         setIsChartLoading(false);
-      }, 300);
+      }, 800); // Increased timeout to ensure data is fully loaded
       return () => clearTimeout(timer);
     }
   }, [priceHistory]);
@@ -445,10 +448,10 @@ const BakuganCard = ({
               </div>
             )}
             
-            {referenceUri && !isChartLoading && (
+            {!isChartLoading && (priceHistory.length > 0 ? priceHistory[0].referenceUri : referenceUri) && (
               <div className="mt-2 text-xs text-gray-400">
                 <a 
-                  href={referenceUri} 
+                  href={priceHistory.length > 0 ? priceHistory[0].referenceUri || referenceUri : referenceUri} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 hover:text-blue-400 transition-colors"
