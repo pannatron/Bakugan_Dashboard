@@ -60,27 +60,62 @@ export async function GET(request: NextRequest) {
     
     // Add price range filters if provided
     if (minPriceParam || maxPriceParam) {
+      // We'll filter the results after fetching them based on price history
+      // This is because we need to match what's displayed in the UI (which uses price history)
+      // We'll keep the query.currentPrice for backward compatibility but will filter again later
       query.currentPrice = {};
       
       if (minPriceParam) {
-        query.currentPrice.$gte = parseFloat(minPriceParam);
+        query.currentPrice.$gte = 0; // Just ensure it's a positive number
       }
       
       if (maxPriceParam) {
-        query.currentPrice.$lte = parseFloat(maxPriceParam);
+        query.currentPrice.$lte = parseFloat(maxPriceParam) * 10; // Use a higher value to ensure we get all potential matches
       }
     }
     
     // Use lean() for better performance and only select needed fields
-    const bakuganItems = await Bakugan.find(query)
+    let bakuganItems: any[] = await Bakugan.find(query)
       .select('_id names size element specialProperties imageUrl currentPrice referenceUri createdAt updatedAt')
       .sort({ updatedAt: -1 })
-      .skip(skip)
-      .limit(limit)
       .lean();
+    
+    // If price filters are provided, we need to filter based on price history
+    if (minPriceParam || maxPriceParam) {
+      const minPrice = minPriceParam ? parseFloat(minPriceParam) : 0;
+      const maxPrice = maxPriceParam ? parseFloat(maxPriceParam) : Number.MAX_SAFE_INTEGER;
       
-    // Get total count for pagination info
-    const totalCount = await Bakugan.countDocuments(query);
+      // Get all bakugan IDs to fetch their price histories
+      const bakuganIds = bakuganItems.map(item => item._id);
+      
+      // Fetch the most recent price history entry for each Bakugan
+      const priceHistories = await PriceHistory.aggregate([
+        { $match: { bakuganId: { $in: bakuganIds } } },
+        { $sort: { timestamp: -1, _id: -1 } },
+        { $group: {
+            _id: "$bakuganId",
+            price: { $first: "$price" },
+            timestamp: { $first: "$timestamp" }
+          }
+        }
+      ]);
+      
+      // Create a map of bakuganId to latest price
+      const priceMap = new Map();
+      priceHistories.forEach(history => {
+        priceMap.set(history._id.toString(), history.price);
+      });
+      
+      // Filter bakugan items based on their latest price history
+      bakuganItems = bakuganItems.filter(item => {
+        const latestPrice = priceMap.get(item._id.toString()) || item.currentPrice;
+        return latestPrice >= minPrice && latestPrice <= maxPrice;
+      });
+    }
+    
+    // Apply pagination after filtering
+    const totalCount = bakuganItems.length;
+    bakuganItems = bakuganItems.slice(skip, skip + limit);
     
     return NextResponse.json({
       items: bakuganItems,
