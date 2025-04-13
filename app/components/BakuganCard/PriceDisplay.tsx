@@ -4,6 +4,7 @@ import { PricePoint, PriceTrend } from './types';
 
 interface PriceDisplayProps {
   currentPrice: number;
+  displayPrice: number | null;
   referenceUri: string;
   priceHistory: PricePoint[];
   isChartLoading: boolean;
@@ -12,6 +13,7 @@ interface PriceDisplayProps {
 
 const PriceDisplay = ({
   currentPrice,
+  displayPrice,
   referenceUri,
   priceHistory,
   isChartLoading,
@@ -27,10 +29,10 @@ const PriceDisplay = ({
           </svg>
         </span>
         <div className="relative">
-          {isChartLoading ? (
+          {isChartLoading || displayPrice === null ? (
             <div className="w-20 h-6 bg-gradient-to-r from-green-600/20 to-green-400/20 animate-pulse rounded-lg"></div>
           ) : (
-            <span className="text-lg">฿{priceHistory.length > 0 ? priceHistory[0].price.toLocaleString() : currentPrice.toLocaleString()}</span>
+            <span className="text-lg">฿{displayPrice.toLocaleString()}</span>
           )}
         </div>
       </div>

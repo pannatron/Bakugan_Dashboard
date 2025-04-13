@@ -27,6 +27,7 @@ const BakuganCard = ({
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [isChartLoading, setIsChartLoading] = useState(true);
+  const [displayPrice, setDisplayPrice] = useState<number | null>(null);
 
   // Calculate price trends based on filtered data
   const calculatePriceTrend = (): PriceTrend => {
@@ -52,20 +53,32 @@ const BakuganCard = ({
   
   const priceTrend = calculatePriceTrend();
 
+  // Initialize with null displayPrice to ensure loading state
+  useEffect(() => {
+    // Reset displayPrice to null on component mount or when priceHistory changes
+    setDisplayPrice(null);
+    setIsChartLoading(true);
+  }, [priceHistory]); // Reset when priceHistory changes
+  
   // Set chart as loaded when price history data is available or confirmed empty
   useEffect(() => {
-    // Only set loading state if we have price history data
+    // Only set display price when price history is loaded
     if (priceHistory && priceHistory.length > 0) {
       // Short timeout to ensure smooth transition and complete loading
       const timer = setTimeout(() => {
+        setDisplayPrice(priceHistory[0].price);
         setIsChartLoading(false);
       }, 800); // Increased timeout to ensure data is fully loaded
       return () => clearTimeout(timer);
-    } else {
-      // If there's no price history, don't show loading state
-      setIsChartLoading(false);
+    } else if (priceHistory) {
+      // If price history is empty array (not undefined/null), use currentPrice
+      const timer = setTimeout(() => {
+        setDisplayPrice(currentPrice);
+        setIsChartLoading(false);
+      }, 800);
+      return () => clearTimeout(timer);
     }
-  }, [priceHistory]);
+  }, [priceHistory, currentPrice]);
 
   return (
     <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50 hover:border-blue-500/50 transition-all duration-500 hover:shadow-premium hover:-translate-y-1 card-shimmer animate-fade-in">
@@ -82,6 +95,7 @@ const BakuganCard = ({
           
           <PriceDisplay
             currentPrice={currentPrice}
+            displayPrice={displayPrice}
             referenceUri={referenceUri}
             priceHistory={priceHistory}
             isChartLoading={isChartLoading}
