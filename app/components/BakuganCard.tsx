@@ -884,7 +884,7 @@ const BakuganCard = ({
           )}
 
           {/* Price History Table - With scrollbar */}
-          {!showUpdateForm && !showEditForm && showPriceHistory && priceHistory.length > 0 && (
+          {!showUpdateForm && !showEditForm && showPriceHistory && priceHistory.length > 0 && !isChartLoading && (
             <div className="mt-6 overflow-hidden rounded-xl border border-gray-800/50">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-800">
