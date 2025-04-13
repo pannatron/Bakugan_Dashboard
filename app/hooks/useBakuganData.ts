@@ -419,16 +419,18 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
   
   // Apply server-side filters when filter values change or pagination changes
   useEffect(() => {
-    // Set transitioning state to show loading animation
-    setIsTransitioning(true);
+    // Only set transitioning if we're not already loading
+    if (!loading) {
+      setIsTransitioning(true);
+    }
     
-    // Use a debounce to prevent rapid flickering
+    // Use a longer debounce to ensure we don't have multiple loading states in quick succession
     const timeoutId = setTimeout(() => {
       fetchBakuganItems();
-    }, 300);
+    }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [filters, pagination.page, pagination.limit, fetchBakuganItems]);
+  }, [filters, pagination.page, pagination.limit, fetchBakuganItems, loading]);
   
   // Reset transitioning state when filtered items change
   useEffect(() => {
@@ -436,7 +438,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
       // Use a longer delay for the transition to complete
       const timer = setTimeout(() => {
         setIsTransitioning(false);
-      }, 800);
+      }, 1200);
       
       return () => clearTimeout(timer);
     }
