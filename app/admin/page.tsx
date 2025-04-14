@@ -33,7 +33,13 @@ function AdminContent() {
     handleUpdatePrice,
     handleUpdateDetails,
     handleDeleteBakugan,
-  } = useBakuganData({ initialLimit: 10 });
+    updatePagination,
+    updateFilter,
+    nameSuggestions,
+    showSuggestions,
+    setShowSuggestions,
+    filters,
+  } = useBakuganData({ initialLimit: 20 });
 
   // State for modals
   const [showEditModal, setShowEditModal] = useState(false);
@@ -329,6 +335,106 @@ function AdminContent() {
             <p className="text-gray-300 mb-4">
               Select a Bakugan to edit its details or delete it from the database.
             </p>
+            
+            {/* Search and Filter Section */}
+            <div className="mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Name Search with Suggestions */}
+                <div className="relative">
+                  <label htmlFor="nameFilter" className="block text-sm font-medium text-gray-300 mb-1">
+                    Search by Name
+                  </label>
+                  <input
+                    type="text"
+                    id="nameFilter"
+                    value={filters.nameFilter}
+                    onChange={(e) => updateFilter('nameFilter', e.target.value)}
+                    onFocus={() => setShowSuggestions(true)}
+                    className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-white"
+                    placeholder="Enter Bakugan name"
+                  />
+                  
+                  {/* Name Suggestions Dropdown */}
+                  {showSuggestions && nameSuggestions.length > 0 && (
+                    <div 
+                      className="absolute z-10 mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                    >
+                      {nameSuggestions.map((name, index) => (
+                        <div
+                          key={index}
+                          className="px-4 py-2 hover:bg-gray-700 cursor-pointer text-gray-300"
+                          onClick={() => {
+                            updateFilter('nameFilter', name);
+                            setShowSuggestions(false);
+                          }}
+                        >
+                          {name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Element Filter */}
+                <div>
+                  <label htmlFor="elementFilter" className="block text-sm font-medium text-gray-300 mb-1">
+                    Filter by Element
+                  </label>
+                  <select
+                    id="elementFilter"
+                    value={filters.elementFilter}
+                    onChange={(e) => updateFilter('elementFilter', e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-white"
+                  >
+                    <option value="">All Elements</option>
+                    <option value="Pyrus">Pyrus</option>
+                    <option value="Aquos">Aquos</option>
+                    <option value="Ventus">Ventus</option>
+                    <option value="Subterra">Subterra</option>
+                    <option value="Haos">Haos</option>
+                    <option value="Darkus">Darkus</option>
+                  </select>
+                </div>
+              </div>
+              
+              {/* Pagination Controls */}
+              <div className="flex justify-between items-center mt-4">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-400">Items per page:</span>
+                  <select
+                    value={pagination.limit}
+                    onChange={(e) => updatePagination(1, parseInt(e.target.value))}
+                    className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 px-2 py-1"
+                  >
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => updatePagination(Math.max(1, pagination.page - 1))}
+                    disabled={pagination.page <= 1}
+                    className="px-3 py-1 rounded-lg bg-gray-800 text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-gray-400">
+                    Page {pagination.page} of {Math.max(1, pagination.pages)}
+                  </span>
+                  <button
+                    onClick={() => updatePagination(Math.min(pagination.pages, pagination.page + 1))}
+                    disabled={pagination.page >= pagination.pages}
+                    className="px-3 py-1 rounded-lg bg-gray-800 text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+            
             <AdminBakuganTable 
               filteredItems={filteredItems}
               loading={loading}
@@ -375,8 +481,14 @@ function AdminContent() {
       
       {/* Edit Modal */}
       {showEditModal && bakuganToEdit && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div 
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={handleCancelEdit} // Close modal when clicking the backdrop
+        >
+          <div 
+            className="max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()} // Prevent clicks inside the form from closing the modal
+          >
             <BakuganEditForm
               id={bakuganToEdit._id}
               initialNames={bakuganToEdit.names}
@@ -394,8 +506,14 @@ function AdminContent() {
       
       {/* Price History Modal */}
       {showPriceModal && bakuganToEdit && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div 
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={handleCancelPriceHistory} // Close modal when clicking the backdrop
+        >
+          <div 
+            className="max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()} // Prevent clicks inside the form from closing the modal
+          >
             <PriceHistoryManager
               bakugan={bakuganToEdit}
               priceHistory={selectedPriceHistory}
