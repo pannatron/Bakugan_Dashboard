@@ -27,6 +27,7 @@ export interface BakuganCardProps {
     imageUrl: string,
     referenceUri: string
   ) => void;
+  onDeleteBakugan?: (id: string) => void;
 }
 
 export interface PriceTrend {

@@ -4,15 +4,27 @@ import { useState } from 'react';
 
 interface PriceUpdateFormProps {
   id: string;
+  initialPrice?: string;
+  initialNotes?: string;
+  initialReferenceUri?: string;
+  initialDate?: string;
   onUpdatePrice: (id: string, price: number, notes: string, referenceUri: string, date: string) => void;
   onCancel: () => void;
 }
 
-const PriceUpdateForm = ({ id, onUpdatePrice, onCancel }: PriceUpdateFormProps) => {
-  const [newPrice, setNewPrice] = useState('');
-  const [notes, setNotes] = useState('');
-  const [newReferenceUri, setNewReferenceUri] = useState('');
-  const [updateDate, setUpdateDate] = useState(new Date().toISOString().split('T')[0]);
+const PriceUpdateForm = ({ 
+  id, 
+  initialPrice = '', 
+  initialNotes = '', 
+  initialReferenceUri = '', 
+  initialDate = new Date().toISOString().split('T')[0],
+  onUpdatePrice, 
+  onCancel 
+}: PriceUpdateFormProps) => {
+  const [newPrice, setNewPrice] = useState(initialPrice);
+  const [notes, setNotes] = useState(initialNotes);
+  const [newReferenceUri, setNewReferenceUri] = useState(initialReferenceUri);
+  const [updateDate, setUpdateDate] = useState(initialDate);
 
   const handlePriceSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -9,6 +9,7 @@ import AdminButtons from './AdminButtons';
 import PriceUpdateForm from './PriceUpdateForm';
 import BakuganEditForm from './BakuganEditForm';
 import PriceHistoryChart from './PriceHistoryChart';
+import { useRouter } from 'next/navigation';
 
 const BakuganCard = ({
   id,
@@ -22,7 +23,9 @@ const BakuganCard = ({
   priceHistory,
   onUpdatePrice,
   onUpdateDetails,
+  onDeleteBakugan,
 }: BakuganCardProps) => {
+  const router = useRouter();
   const { user } = useAuth();
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -110,6 +113,7 @@ const BakuganCard = ({
               setShowUpdateForm={setShowUpdateForm}
               setShowEditForm={setShowEditForm}
               hasUpdateDetails={!!onUpdateDetails}
+              onDelete={onDeleteBakugan ? () => onDeleteBakugan(id) : undefined}
             />
           )}
         </div>

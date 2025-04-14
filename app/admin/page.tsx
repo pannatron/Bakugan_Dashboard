@@ -6,6 +6,11 @@ import AddBakuganForm from '@/app/components/AddBakuganForm';
 import ManageRecommendations from '@/app/components/ManageRecommendations';
 import ManageBakutechRecommendations from '@/app/components/ManageBakutechRecommendations';
 import Link from 'next/link';
+import { useBakuganData } from '@/app/hooks/useBakuganData';
+import AdminBakuganTable from '@/app/components/AdminBakuganTable';
+import { Bakugan, PricePoint } from '@/app/types/bakugan';
+import BakuganEditForm from '@/app/components/BakuganCard/BakuganEditForm';
+import PriceHistoryManager from '@/app/components/PriceHistoryManager';
 
 // Admin page component
 function AdminContent() {
@@ -15,6 +20,63 @@ function AdminContent() {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'add' | 'edit' | 'recommendations' | 'bakutech'>('add');
+  
+  // Get Bakugan data for edit/delete tab
+  const {
+    filteredItems,
+    loading,
+    error: bakuganError,
+    pagination,
+    priceHistories,
+    isTransitioning,
+    handleUpdatePrice,
+    handleUpdateDetails,
+    handleDeleteBakugan,
+  } = useBakuganData({ initialLimit: 10 });
+
+  // State for modals
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showPriceModal, setShowPriceModal] = useState(false);
+  const [bakuganToEdit, setBakuganToEdit] = useState<Bakugan | null>(null);
+  const [selectedPriceHistory, setSelectedPriceHistory] = useState<PricePoint[]>([]);
+
+  // Handle edit button click
+  const handleEditBakugan = (bakuganId: string) => {
+    // Find the Bakugan to edit
+    const bakugan = filteredItems.find(item => item._id === bakuganId);
+    if (bakugan) {
+      // Set the bakugan to edit and show the modal
+      setBakuganToEdit(bakugan);
+      setShowEditModal(true);
+    }
+  };
+
+  // Handle cancel edit
+  const handleCancelEdit = () => {
+    setShowEditModal(false);
+    setBakuganToEdit(null);
+  };
+
+
+  // Handle cancel price history
+  const handleCancelPriceHistory = () => {
+    setShowPriceModal(false);
+    setBakuganToEdit(null);
+    setSelectedPriceHistory([]);
+  };
+
+  // Handle update price button click
+  const handleUpdateBakuganPrice = (bakuganId: string) => {
+    // Find the Bakugan to update price
+    const bakugan = filteredItems.find(item => item._id === bakuganId);
+    if (bakugan) {
+      // Set the bakugan and show the price history modal
+      setBakuganToEdit(bakugan);
+      setSelectedPriceHistory(priceHistories[bakuganId] || []);
+      setShowPriceModal(true);
+    }
+  };
 
   // Handle admin login
   const handleLogin = (e: React.FormEvent) => {
@@ -188,9 +250,54 @@ function AdminContent() {
     <div className="max-w-6xl mx-auto px-4 py-16 sm:px-6 lg:px-8 xl:px-12">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-500 to-blue-600 animate-gradient-x">
-          Admin Dashboard - Add Bakugan
+          Admin Dashboard
         </h1>
-        
+      </div>
+      
+      {/* Tab Navigation */}
+      <div className="mb-8 border-b border-gray-700">
+        <nav className="flex space-x-4">
+          <button
+            onClick={() => setActiveTab('add')}
+            className={`px-4 py-3 font-medium text-sm rounded-t-lg ${
+              activeTab === 'add'
+                ? 'bg-blue-600/20 text-blue-300 border-b-2 border-blue-500'
+                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/30'
+            }`}
+          >
+            Add New Bakugan
+          </button>
+          <button
+            onClick={() => setActiveTab('edit')}
+            className={`px-4 py-3 font-medium text-sm rounded-t-lg ${
+              activeTab === 'edit'
+                ? 'bg-purple-600/20 text-purple-300 border-b-2 border-purple-500'
+                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/30'
+            }`}
+          >
+            Edit or Delete Bakugan
+          </button>
+          <button
+            onClick={() => setActiveTab('recommendations')}
+            className={`px-4 py-3 font-medium text-sm rounded-t-lg ${
+              activeTab === 'recommendations'
+                ? 'bg-green-600/20 text-green-300 border-b-2 border-green-500'
+                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/30'
+            }`}
+          >
+            Manage Recommendations
+          </button>
+          <button
+            onClick={() => setActiveTab('bakutech')}
+            className={`px-4 py-3 font-medium text-sm rounded-t-lg ${
+              activeTab === 'bakutech'
+                ? 'bg-yellow-600/20 text-yellow-300 border-b-2 border-yellow-500'
+                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/30'
+            }`}
+          >
+            BakuTech Recommendations
+          </button>
+        </nav>
       </div>
       
       {error && (
@@ -203,34 +310,101 @@ function AdminContent() {
         </div>
       )}
       
-      <div className="mb-12">
-        <AddBakuganForm onAddBakugan={handleAddBakugan} />
-      </div>
+      {/* Tab Content */}
+      {activeTab === 'add' && (
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-500 to-blue-600 animate-gradient-x mb-6">
+            Add New Bakugan
+          </h2>
+          <AddBakuganForm onAddBakugan={handleAddBakugan} />
+        </div>
+      )}
       
-      <div className="mb-12">
-        <ManageRecommendations />
-      </div>
-      
-      <div className="mb-12">
-        <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-500 to-blue-600 animate-gradient-x mb-6">
-          BakuTech Recommendations
-        </h2>
-        <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50">
-          <p className="text-gray-300 mb-4">
-            Manage your recommended BakuTech items. These will be displayed in the BakuTech recommendations section.
-          </p>
-          <Link 
-            href="/bakumania/admin/add"
-            className="inline-block px-4 py-2 rounded-lg bg-blue-600/30 text-blue-300 border border-blue-600/30 hover:bg-blue-600/50 transition-colors mb-6"
-          >
-            Add New BakuTech
-          </Link>
-          
-          <div className="mt-4">
-            <ManageBakutechRecommendations />
+      {activeTab === 'edit' && (
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-purple-500 to-purple-600 animate-gradient-x mb-6">
+            Edit or Delete Bakugan
+          </h2>
+          <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50">
+            <p className="text-gray-300 mb-4">
+              Select a Bakugan to edit its details or delete it from the database.
+            </p>
+            <AdminBakuganTable 
+              filteredItems={filteredItems}
+              loading={loading}
+              error={bakuganError}
+              onEdit={handleEditBakugan}
+              onDelete={handleDeleteBakugan}
+              onUpdatePrice={handleUpdateBakuganPrice}
+            />
           </div>
         </div>
-      </div>
+      )}
+      
+      {activeTab === 'recommendations' && (
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-300 via-green-500 to-green-600 animate-gradient-x mb-6">
+            Manage Recommendations
+          </h2>
+          <ManageRecommendations />
+        </div>
+      )}
+      
+      {activeTab === 'bakutech' && (
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-600 animate-gradient-x mb-6">
+            BakuTech Recommendations
+          </h2>
+          <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50">
+            <p className="text-gray-300 mb-4">
+              Manage your recommended BakuTech items. These will be displayed in the BakuTech recommendations section.
+            </p>
+            <Link 
+              href="/bakumania/admin/add"
+              className="inline-block px-4 py-2 rounded-lg bg-yellow-600/30 text-yellow-300 border border-yellow-600/30 hover:bg-yellow-600/50 transition-colors mb-6"
+            >
+              Add New BakuTech
+            </Link>
+            
+            <div className="mt-4">
+              <ManageBakutechRecommendations />
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Edit Modal */}
+      {showEditModal && bakuganToEdit && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <BakuganEditForm
+              id={bakuganToEdit._id}
+              initialNames={bakuganToEdit.names}
+              initialSize={bakuganToEdit.size}
+              initialElement={bakuganToEdit.element}
+              initialSpecialProperties={bakuganToEdit.specialProperties || ''}
+              initialImageUrl={bakuganToEdit.imageUrl || ''}
+              initialReferenceUri={bakuganToEdit.referenceUri || ''}
+              onUpdateDetails={handleUpdateDetails}
+              onCancel={handleCancelEdit}
+            />
+          </div>
+        </div>
+      )}
+      
+      {/* Price History Modal */}
+      {showPriceModal && bakuganToEdit && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <PriceHistoryManager
+              bakugan={bakuganToEdit}
+              priceHistory={selectedPriceHistory}
+              onUpdatePrice={handleUpdatePrice}
+              onClose={handleCancelPriceHistory}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

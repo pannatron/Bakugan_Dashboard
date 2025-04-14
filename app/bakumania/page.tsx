@@ -31,6 +31,7 @@ function BakumaniaContent() {
     setShowSuggestions,
     handleUpdatePrice,
     handleUpdateDetails,
+    handleDeleteBakugan,
   } = useBakuganData();
 
   return (
@@ -81,6 +82,7 @@ function BakumaniaContent() {
         isAdmin={!!user?.isAdmin}
         onUpdatePrice={handleUpdatePrice}
         onUpdateDetails={handleUpdateDetails}
+        onDeleteBakugan={handleDeleteBakugan}
       />
       
       {/* Pagination Controls */}

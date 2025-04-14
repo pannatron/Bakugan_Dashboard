@@ -467,6 +467,39 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
     }
   }, [filteredItems, prefetchPriceHistories]);
 
+  // Delete a Bakugan (admin only)
+  const handleDeleteBakugan = useCallback(async (bakuganId: string) => {
+    try {
+      const response = await fetch(`/api/bakugan/${bakuganId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete Bakugan');
+      }
+
+      // Refresh the list to get updated data
+      fetchBakuganItems();
+      
+      // Clear the price history for the deleted Bakugan
+      setPriceHistories((prev) => {
+        const newHistories = { ...prev };
+        delete newHistories[bakuganId];
+        return newHistories;
+      });
+      
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting Bakugan:', err);
+      setError(err.message || 'Failed to delete Bakugan');
+      return false;
+    }
+  }, [fetchBakuganItems]);
+
   return {
     // State
     filteredItems,
@@ -489,5 +522,6 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
     setShowSuggestions,
     handleUpdatePrice,
     handleUpdateDetails,
+    handleDeleteBakugan,
   };
 }
