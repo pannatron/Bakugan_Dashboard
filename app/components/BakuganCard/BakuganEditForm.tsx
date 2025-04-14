@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { elements } from '@/app/types/bakugan';
 
 interface BakuganEditFormProps {
   id: string;
@@ -142,15 +143,38 @@ const BakuganEditForm = ({
           <label htmlFor="editElement" className="block text-sm font-medium text-gray-300 mb-1">
             Element
           </label>
-          <input
-            type="text"
+          <select
             id="editElement"
             value={editElement}
             onChange={(e) => setEditElement(e.target.value)}
             required
             className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
-            placeholder="Enter Bakugan element"
-          />
+          >
+            {elements.map((elem) => (
+              <option key={elem.value} value={elem.value}>{elem.value}</option>
+            ))}
+          </select>
+          
+          {/* Element Icons */}
+          <div className="mt-2 flex flex-wrap gap-2">
+            {elements.map((elem) => (
+              <div 
+                key={elem.value}
+                onClick={() => setEditElement(elem.value)}
+                className={`w-10 h-10 rounded-md overflow-hidden flex items-center justify-center cursor-pointer transition-all ${
+                  elem.value === editElement 
+                    ? 'ring-2 ring-purple-500 scale-110' 
+                    : 'opacity-70 hover:opacity-100 hover:scale-105'
+                }`}
+              >
+                <img 
+                  src={elem.image} 
+                  alt={elem.value} 
+                  className="w-8 h-8 object-contain"
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Special Properties */}
@@ -158,14 +182,20 @@ const BakuganEditForm = ({
           <label htmlFor="editSpecialProperties" className="block text-sm font-medium text-gray-300 mb-1">
             Special Properties (optional)
           </label>
-          <input
-            type="text"
+          <select
             id="editSpecialProperties"
             value={editSpecialProperties}
             onChange={(e) => setEditSpecialProperties(e.target.value)}
             className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
-            placeholder="Transparent, pearl color, prototype, etc."
-          />
+          >
+            <option value="">None</option>
+            <option value="Normal">Normal</option>
+            <option value="Clear">Clear</option>
+            <option value="Pearl">Pearl</option>
+            <option value="Prototype">Prototype</option>
+            <option value="Painted">Painted</option>
+            <option value="Translucent">Translucent</option>
+          </select>
         </div>
 
         {/* Image URL */}
