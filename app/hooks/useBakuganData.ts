@@ -226,11 +226,11 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
       setLoading(false);
       isFetchingRef.current = false;
       
-      // Add a delay before resetting the transitioning state
-      // This ensures the loading animation completes smoothly
+      // Add a shorter delay before resetting the transitioning state
+      // This ensures the loading animation completes smoothly but doesn't feel too slow
       setTimeout(() => {
         setIsTransitioning(false);
-      }, 800);
+      }, 300);
     }
   }, [filters, pagination, getCachedData, setCachedData]);
 
@@ -301,6 +301,9 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
   // Update a Bakugan's price (admin only)
   const handleUpdatePrice = useCallback(async (bakuganId: string, price: number, notes: string, referenceUri: string, date: string) => {
     try {
+      // Set loading state to true to show loading indicator
+      setLoading(true);
+      
       const response = await fetch(`/api/bakugan/${bakuganId}`, {
         method: 'PATCH',
         headers: {
@@ -319,20 +322,46 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
         throw new Error(errorData.error || 'Failed to update price');
       }
 
-      // Update the Bakugan item in the state
+      // Update the Bakugan item in the state immediately
+      setFilteredItems((prevItems) =>
+        prevItems.map((item) =>
+          item._id === bakuganId ? { ...item, currentPrice: price } : item
+        )
+      );
+      
       setBakuganItems((prevItems) =>
         prevItems.map((item) =>
           item._id === bakuganId ? { ...item, currentPrice: price } : item
         )
       );
 
+      // Clear the cache for this Bakugan's price history
+      const cacheKey = `priceHistory-${bakuganId}`;
+      setCache(prev => {
+        const newCache = { ...prev };
+        delete newCache[cacheKey];
+        return newCache;
+      });
+
       // Refresh the price history
-      fetchPriceHistory(bakuganId);
+      await fetchPriceHistory(bakuganId);
+      
+      // Refresh the list to get updated data from the server
+      await fetchBakuganItems();
+      
+      // Show success message
+      setError('Price updated successfully!');
+      
+      return true;
     } catch (err: any) {
       console.error('Error updating price:', err);
       setError(err.message || 'Failed to update price');
+      return false;
+    } finally {
+      // Ensure loading state is reset
+      setLoading(false);
     }
-  }, [fetchPriceHistory]);
+  }, [fetchPriceHistory, fetchBakuganItems, setCache]);
 
   // Update Bakugan details (admin only)
   const handleUpdateDetails = useCallback(async (
@@ -345,6 +374,9 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
     referenceUri: string
   ) => {
     try {
+      // Set loading state to true to show loading indicator
+      setLoading(true);
+      
       const response = await fetch(`/api/bakugan/${bakuganId}`, {
         method: 'PUT',
         headers: {
@@ -365,11 +397,35 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
         throw new Error(errorData.error || 'Failed to update Bakugan details');
       }
 
-      // Refresh the list to get updated data
-      fetchBakuganItems();
+      // Update the Bakugan item in the state immediately
+      setFilteredItems((prevItems) =>
+        prevItems.map((item) =>
+          item._id === bakuganId ? { 
+            ...item, 
+            names, 
+            size, 
+            element, 
+            specialProperties, 
+            imageUrl, 
+            referenceUri 
+          } : item
+        )
+      );
+      
+      // Refresh the list to get updated data from the server
+      await fetchBakuganItems();
+      
+      // Show success message
+      setError('Bakugan details updated successfully!');
+      
+      return true;
     } catch (err: any) {
       console.error('Error updating Bakugan details:', err);
       setError(err.message || 'Failed to update Bakugan details');
+      return false;
+    } finally {
+      // Ensure loading state is reset
+      setLoading(false);
     }
   }, [fetchBakuganItems]);
 
@@ -470,6 +526,9 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
   // Delete a Bakugan (admin only)
   const handleDeleteBakugan = useCallback(async (bakuganId: string) => {
     try {
+      // Set loading state to true to show loading indicator
+      setLoading(true);
+      
       const response = await fetch(`/api/bakugan/${bakuganId}`, {
         method: 'DELETE',
         headers: {
@@ -482,8 +541,8 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
         throw new Error(errorData.error || 'Failed to delete Bakugan');
       }
 
-      // Refresh the list to get updated data
-      fetchBakuganItems();
+      // Remove the deleted item from the current state immediately
+      setFilteredItems((prevItems) => prevItems.filter(item => item._id !== bakuganId));
       
       // Clear the price history for the deleted Bakugan
       setPriceHistories((prev) => {
@@ -492,13 +551,83 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
         return newHistories;
       });
       
+      // Refresh the list to get updated data from the server
+      await fetchBakuganItems();
+      
+      // Show success message
+      setError('Bakugan deleted successfully!');
+      
       return true;
     } catch (err: any) {
       console.error('Error deleting Bakugan:', err);
       setError(err.message || 'Failed to delete Bakugan');
       return false;
+    } finally {
+      // Ensure loading state is reset
+      setLoading(false);
     }
   }, [fetchBakuganItems]);
+
+  // Delete a price history entry
+  const handleDeletePriceHistory = useCallback(async (priceHistoryId: string, bakuganId: string) => {
+    try {
+      // Set loading state to true to show loading indicator
+      setLoading(true);
+      
+      const response = await fetch(`/api/price-history/${priceHistoryId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete price history entry');
+      }
+
+      const data = await response.json();
+      
+      // Update the price histories state with the updated price history
+      setPriceHistories((prev) => ({
+        ...prev,
+        [bakuganId]: data.priceHistory,
+      }));
+      
+      // Update the Bakugan item in the state if the current price has changed
+      const bakugan = filteredItems.find(item => item._id === bakuganId);
+      if (bakugan && data.priceHistory.length > 0) {
+        const latestPrice = data.priceHistory[0].price;
+        if (bakugan.currentPrice !== latestPrice) {
+          setBakuganItems((prevItems) =>
+            prevItems.map((item) =>
+              item._id === bakuganId ? { ...item, currentPrice: latestPrice } : item
+            )
+          );
+          setFilteredItems((prevItems) =>
+            prevItems.map((item) =>
+              item._id === bakuganId ? { ...item, currentPrice: latestPrice } : item
+            )
+          );
+        }
+      }
+      
+      // Refresh the list to get updated data from the server
+      await fetchBakuganItems();
+      
+      // Show success message
+      setError('Price history entry deleted successfully!');
+      
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting price history entry:', err);
+      setError(err.message || 'Failed to delete price history entry');
+      return false;
+    } finally {
+      // Ensure loading state is reset
+      setLoading(false);
+    }
+  }, [filteredItems, fetchBakuganItems]);
 
   return {
     // State
@@ -523,5 +652,6 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
     handleUpdatePrice,
     handleUpdateDetails,
     handleDeleteBakugan,
+    handleDeletePriceHistory,
   };
 }

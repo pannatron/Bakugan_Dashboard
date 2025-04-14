@@ -7,19 +7,22 @@ import PriceUpdateForm from './BakuganCard/PriceUpdateForm';
 interface PriceHistoryManagerProps {
   bakugan: Bakugan;
   priceHistory: PricePoint[];
-  onUpdatePrice: (id: string, price: number, notes: string, referenceUri: string, date: string) => void;
+  onUpdatePrice: (id: string, price: number, notes: string, referenceUri: string, date: string) => Promise<void | boolean> | void;
   onClose: () => void;
+  onDeletePriceHistory?: (priceHistoryId: string, bakuganId: string) => Promise<boolean>;
 }
 
 const PriceHistoryManager = ({ 
   bakugan, 
   priceHistory, 
   onUpdatePrice, 
-  onClose 
+  onClose,
+  onDeletePriceHistory
 }: PriceHistoryManagerProps) => {
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [selectedPricePoint, setSelectedPricePoint] = useState<PricePoint | null>(null);
   const [sortedPriceHistory, setSortedPriceHistory] = useState<PricePoint[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Sort price history by date (newest first)
@@ -44,10 +47,33 @@ const PriceHistoryManager = ({
     setSelectedPricePoint(null);
   };
 
-  const handlePriceUpdate = (id: string, price: number, notes: string, referenceUri: string, date: string) => {
-    onUpdatePrice(id, price, notes, referenceUri, date);
-    setShowUpdateForm(false);
-    setSelectedPricePoint(null);
+  const handlePriceUpdate = async (id: string, price: number, notes: string, referenceUri: string, date: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Add the new price point to the local state immediately for better UX
+      const newPricePoint: PricePoint = {
+        _id: 'temp-id-' + Date.now(), // Temporary ID until we get the real one from the server
+        price,
+        notes,
+        referenceUri,
+        timestamp: new Date(date).toISOString(),
+        bakuganId: id
+      };
+      
+      // Add to the sorted price history
+      setSortedPriceHistory(prev => [newPricePoint, ...prev].sort((a, b) => {
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      }));
+      
+      // Call the API to update the price
+      await onUpdatePrice(id, price, notes, referenceUri, date);
+      
+      setShowUpdateForm(false);
+      setSelectedPricePoint(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -87,6 +113,13 @@ const PriceHistoryManager = ({
             </button>
           </div>
 
+          {/* Loading Indicator */}
+          {isLoading && (
+            <div className="flex justify-center items-center py-4 mb-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          )}
+          
           <div className="overflow-hidden rounded-xl border border-gray-800/50">
             <table className="min-w-full divide-y divide-gray-800">
               <thead className="bg-gray-800/50">
@@ -149,12 +182,34 @@ const PriceHistoryManager = ({
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-400">
-                        <button
-                          onClick={() => handleEditPrice(point)}
-                          className="text-blue-400 hover:text-blue-300 transition-colors"
-                        >
-                          Edit
-                        </button>
+                        <div className="flex space-x-3">
+                          <button
+                            onClick={() => handleEditPrice(point)}
+                            className="text-blue-400 hover:text-blue-300 transition-colors"
+                          >
+                            Edit
+                          </button>
+                          {onDeletePriceHistory && (
+                            <button
+                              onClick={async () => {
+                                if (window.confirm(`Are you sure you want to delete this price history entry? This action cannot be undone.`)) {
+                                  try {
+                                    setIsLoading(true);
+                                    // Remove the item from the local state immediately for better UX
+                                    setSortedPriceHistory(prev => prev.filter(p => p._id !== point._id));
+                                    // Then call the API to delete it
+                                    await onDeletePriceHistory(point._id, bakugan._id);
+                                  } finally {
+                                    setIsLoading(false);
+                                  }
+                                }
+                              }}
+                              className="text-red-400 hover:text-red-300 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

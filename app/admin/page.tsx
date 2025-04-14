@@ -33,6 +33,7 @@ function AdminContent() {
     handleUpdatePrice,
     handleUpdateDetails,
     handleDeleteBakugan,
+    handleDeletePriceHistory,
     updatePagination,
     updateFilter,
     nameSuggestions,
@@ -82,6 +83,26 @@ function AdminContent() {
       setSelectedPriceHistory(priceHistories[bakuganId] || []);
       setShowPriceModal(true);
     }
+  };
+
+  // Wrapper for handleDeletePriceHistory to update the selected price history
+  const handleDeletePriceHistoryWrapper = async (priceHistoryId: string, bakuganId: string) => {
+    const success = await handleDeletePriceHistory(priceHistoryId, bakuganId);
+    if (success && bakuganToEdit && bakuganToEdit._id === bakuganId) {
+      // Update the selected price history with the updated price history
+      setSelectedPriceHistory(priceHistories[bakuganId] || []);
+    }
+    return success;
+  };
+
+  // Wrapper for handleUpdatePrice to update the selected price history
+  const handleUpdatePriceWrapper = async (id: string, price: number, notes: string, referenceUri: string, date: string) => {
+    const success = await handleUpdatePrice(id, price, notes, referenceUri, date);
+    if (success && bakuganToEdit && bakuganToEdit._id === id) {
+      // Update the selected price history with the updated price history
+      setSelectedPriceHistory(priceHistories[id] || []);
+    }
+    return success;
   };
 
   // Handle admin login
@@ -517,8 +538,9 @@ function AdminContent() {
             <PriceHistoryManager
               bakugan={bakuganToEdit}
               priceHistory={selectedPriceHistory}
-              onUpdatePrice={handleUpdatePrice}
+              onUpdatePrice={handleUpdatePriceWrapper}
               onClose={handleCancelPriceHistory}
+              onDeletePriceHistory={handleDeletePriceHistoryWrapper}
             />
           </div>
         </div>
