@@ -2,11 +2,31 @@
 
 import { BakuganCardProps } from './types';
 
+// Function to determine color class based on series name
+const getSeriesColorClass = (series: string): string => {
+  const seriesLower = series.toLowerCase();
+  
+  if (seriesLower.includes('battle brawlers') || seriesLower.includes('vol.1')) {
+    return 'bg-red-600/90'; // Red for Battle Brawlers
+  } else if (seriesLower.includes('new vestroia') || seriesLower.includes('vol.2')) {
+    return 'bg-green-600/90'; // Green for New Vestroia
+  } else if (seriesLower.includes('gundalian invaders') || seriesLower.includes('vol.3')) {
+    return 'bg-yellow-600/90'; // Yellow for Gundalian Invaders
+  } else if (seriesLower.includes('mechtanium surge') || seriesLower.includes('vol.4')) {
+    return 'bg-purple-600/90'; // Purple for Mechtanium Surge
+  } else if (seriesLower.includes('bakutech')) {
+    return 'bg-blue-600/90'; // Blue for Bakutech
+  } else {
+    return 'bg-blue-600/90'; // Default blue for other series
+  }
+};
+
 interface BakuganInfoProps {
   names: string[];
   size: string;
   element: string;
   specialProperties: string;
+  series?: string;
   imageUrl: string;
 }
 
@@ -15,11 +35,29 @@ const BakuganInfo = ({
   size,
   element,
   specialProperties,
+  series,
   imageUrl,
 }: BakuganInfoProps) => {
   return (
     <div>
-      <div className="relative w-full h-48 md:h-64 mb-4 overflow-hidden rounded-xl">
+      {/* Series text with reduced glow effect */}
+      {series && (
+        <div className="relative z-20 mb-2">
+          <p className="text-lg font-semibold uppercase tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+            <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-yellow-100 to-yellow-300">
+              {series}
+            </span>
+          </p>
+          {/* Subtle glow effect */}
+          <div className="absolute -inset-1 blur-md opacity-30 -z-10 bg-gradient-to-r from-white/30 to-yellow-500/30"></div>
+        </div>
+      )}
+      
+      <div className="relative w-full h-48 md:h-64 mb-4 overflow-hidden rounded-xl" style={{ 
+        backgroundColor: '#4A5056',
+        boxShadow: 'inset 0 0 30px rgba(0,0,0,0.3)'
+      }}>
+        {/* Image */}
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -53,6 +91,7 @@ const BakuganInfo = ({
         </div>
       )}
       
+      {/* Grid with Size and Element only (2 columns) */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <div className="p-2 rounded-lg bg-gray-800/50 text-center">
           <p className="text-xs text-gray-400">Size</p>

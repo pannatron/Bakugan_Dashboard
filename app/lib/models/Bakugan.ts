@@ -5,6 +5,7 @@ export interface IBakugan extends Document {
   size: string; // B1, B2, B3
   element: string; // Element type
   specialProperties: string; // Normal, Clear, Pearl, Prototype, Painted
+  series: string; // Battle Brawlers Vol.1, New Vestroia Vol.2, etc.
   imageUrl: string;
   currentPrice: number;
   referenceUri: string; // URI for price reference
@@ -39,6 +40,11 @@ const BakuganSchema = new Schema<IBakugan>(
       required: false,
       default: 'Normal',
     },
+    series: {
+      type: String,
+      required: false,
+      default: '',
+    },
     imageUrl: {
       type: String,
       required: false,
@@ -71,6 +77,7 @@ BakuganSchema.index({ names: 1 }); // For name searches
 BakuganSchema.index({ size: 1 }); // For size filtering
 BakuganSchema.index({ element: 1 }); // For element filtering
 BakuganSchema.index({ specialProperties: 1 }); // For special properties filtering
+BakuganSchema.index({ series: 1 }); // For series filtering
 BakuganSchema.index({ currentPrice: 1 }); // For price range filtering
 BakuganSchema.index({ updatedAt: -1 }); // For sorting by most recent
 BakuganSchema.index({ 'names.0': 1, size: 1, element: 1 }); // Compound index for the common query pattern

@@ -11,6 +11,7 @@ interface AdminBakuganTableProps {
   onEdit: (bakuganId: string) => void;
   onDelete: (bakuganId: string) => void;
   onUpdatePrice: (bakuganId: string) => void;
+  onRefresh: () => void;
 }
 
 export default function AdminBakuganTable({
@@ -19,7 +20,8 @@ export default function AdminBakuganTable({
   error,
   onEdit,
   onDelete,
-  onUpdatePrice
+  onUpdatePrice,
+  onRefresh
 }: AdminBakuganTableProps) {
   return (
     <div className="relative">
@@ -68,6 +70,19 @@ export default function AdminBakuganTable({
       {/* Bakugan Table */}
       {!loading && (
         <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-xl p-4 border border-gray-800/50">
+          {/* Refresh Button */}
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={onRefresh}
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-500 text-white text-sm font-semibold hover:from-green-500 hover:to-green-400 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh Data
+            </button>
+          </div>
+          
           {filteredItems.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-400 text-lg">
@@ -83,6 +98,7 @@ export default function AdminBakuganTable({
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Name</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Size</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Element</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Series</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Price</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-300">Actions</th>
                   </tr>
@@ -104,6 +120,7 @@ export default function AdminBakuganTable({
                       <td className="px-4 py-3 text-white font-medium">{bakugan.names[0]}</td>
                       <td className="px-4 py-3 text-gray-300">{bakugan.size}</td>
                       <td className="px-4 py-3 text-gray-300">{bakugan.element}</td>
+                      <td className="px-4 py-3 text-gray-300">{bakugan.series || '-'}</td>
                       <td className="px-4 py-3 text-gray-300">
                         {bakugan.currentPrice.toLocaleString()} THB
                       </td>

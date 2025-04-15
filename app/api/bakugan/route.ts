@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const bakutechParam = searchParams.get('bakutech');
     const excludeSizeParam = searchParams.get('excludeSize');
     const specialPropertiesParam = searchParams.get('specialProperties');
+    const seriesParam = searchParams.get('series');
     const minPriceParam = searchParams.get('minPrice');
     const maxPriceParam = searchParams.get('maxPrice');
     
@@ -58,6 +59,11 @@ export async function GET(request: NextRequest) {
       query.specialProperties = specialPropertiesParam;
     }
     
+    // Add series filter if provided
+    if (seriesParam) {
+      query.series = seriesParam;
+    }
+    
     // Add price range filters if provided
     if (minPriceParam || maxPriceParam) {
       // We'll filter the results after fetching them based on price history
@@ -76,7 +82,7 @@ export async function GET(request: NextRequest) {
     
     // Use lean() for better performance and only select needed fields
     let bakuganItems: any[] = await Bakugan.find(query)
-      .select('_id names size element specialProperties imageUrl currentPrice referenceUri createdAt updatedAt')
+      .select('_id names size element specialProperties series imageUrl currentPrice referenceUri createdAt updatedAt')
       .sort({ updatedAt: -1 })
       .lean();
     
@@ -146,6 +152,7 @@ export async function POST(request: NextRequest) {
       size, 
       element, 
       specialProperties, 
+      series,
       imageUrl, 
       currentPrice,
       referenceUri,
@@ -227,6 +234,7 @@ if (existingBakugan) {
       size,
       element,
       specialProperties: specialProperties || 'Normal',
+      series: series || '',
       imageUrl: imageUrl || '',
       currentPrice,
       referenceUri: referenceUri || '',

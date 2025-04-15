@@ -27,9 +27,10 @@ interface BakuganListProps {
     size: string,
     element: string,
     specialProperties: string,
+    series: string,
     imageUrl: string,
     referenceUri: string
-  ) => void;
+  ) => Promise<boolean>;
   onDeleteBakugan?: (bakuganId: string) => void;
 }
 
@@ -151,6 +152,7 @@ export default function BakuganList({
                     size={bakugan.size}
                     element={bakugan.element}
                     specialProperties={bakugan.specialProperties}
+                    series={bakugan.series}
                     imageUrl={bakugan.imageUrl}
                     currentPrice={bakugan.currentPrice}
                     referenceUri={bakugan.referenceUri}

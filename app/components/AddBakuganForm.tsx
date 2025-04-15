@@ -1,51 +1,23 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-
-interface AddBakuganFormProps {
-  onAddBakugan: (
-    names: string[],
-    size: string,
-    element: string,
-    specialProperties: string,
-    imageUrl: string,
-    currentPrice: number,
-    referenceUri: string,
-    date: string
-  ) => void;
-  onUpdateBakugan?: (
-    id: string,
-    price: number,
-    referenceUri: string,
-    notes: string,
-    date: string
-  ) => void;
-}
-
-interface BakuganRecommendation {
-  _id: string;
-  names: string[];
-  size: string;
-  element: string;
-  specialProperties: string;
-  imageUrl?: string;
-  currentPrice: number;
-  priceHistory?: {
-    price: number;
-    timestamp: string;
-    notes?: string;
-    referenceUri?: string;
-  }[];
-}
+import { useState, useEffect } from 'react';
+import {
+  BakuganNameInput,
+  BakuganRecommendations,
+  SelectedBakuganDisplay,
+  AddBakuganFields,
+  UpdateBakuganFields,
+  BakuganSelectionList,
+  BakuganRecommendation,
+  AddBakuganFormProps
+} from './BakuganForm';
 
 const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) => {
   const [names, setNames] = useState<string[]>(['']);
   const [size, setSize] = useState('B1');
   const [element, setElement] = useState('Pyrus');
   const [specialProperties, setSpecialProperties] = useState('Normal');
-  const [filterSpecialProperties, setFilterSpecialProperties] = useState('');
+  const [series, setSeries] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [price, setPrice] = useState('');
   const [referenceUri, setReferenceUri] = useState('');
@@ -57,30 +29,9 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
   const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [selectedBakugan, setSelectedBakugan] = useState<BakuganRecommendation | null>(null);
   
-  // No longer needed as we're using Link component
-
-  const elements = [
-    { value: 'Pyrus', image: '/element/Pyrus.svg' },
-    { value: 'Aquos', image: '/element/Aquos.webp' },
-    { value: 'Ventus', image: '/element/ventus.png' },
-    { value: 'Subterra', image: '/element/Subterra.png' },
-    { value: 'Haos', image: '/element/Haos.webp' },
-    { value: 'Darkus', image: '/element/Darkus.webp' },
-  ];
-
-  const specialPropertiesOptions = [
-    'Normal',
-    'Clear',
-    'Pearl',
-    'Prototype',
-    'Painted',
-    'Translucent',
-  ];
-
   // Name suggestions
   const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const suggestionRef = useRef<HTMLDivElement>(null);
   
   // Search for recommendations when name changes (only in Add mode)
   useEffect(() => {
@@ -149,20 +100,6 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
 
     return () => clearTimeout(debounceTimer);
   }, [names[0], isUpdateMode]);
-  
-  // Handle click outside suggestions
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    }
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   // Function to directly search for a Bakugan by name, size, and element and switch to update mode
   const searchAndSelectBakugan = async (name: string, searchSize?: string, searchElement?: string) => {
@@ -242,7 +179,6 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
     }
   };
 
-
   const handleAddName = () => {
     setNames([...names, '']);
   };
@@ -312,6 +248,7 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
           size,
           element,
           specialProperties,
+          series,
           imageUrl,
           priceValue,
           referenceUri,
@@ -329,6 +266,7 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
     setSize('B1');
     setElement('Pyrus');
     setSpecialProperties('Normal');
+    setSeries('');
     setImageUrl('');
     setPrice('');
     setReferenceUri('');
@@ -346,6 +284,7 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
     setSize(bakugan.size);
     setElement(bakugan.element);
     setSpecialProperties(bakugan.specialProperties || 'Normal');
+    setSeries(bakugan.series || '');
     setIsUpdateMode(true);
     
     // Set the current price as a reference
@@ -353,6 +292,14 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
     
     // Clear recommendations when switching to update mode
     setRecommendations([]);
+  };
+
+  const handleCopyBakugan = (bakugan: BakuganRecommendation) => {
+    setNames([...bakugan.names]);
+    setSize(bakugan.size);
+    setElement(bakugan.element);
+    setSpecialProperties(bakugan.specialProperties || 'Normal');
+    setSeries(bakugan.series || '');
   };
 
   if (!isFormOpen) {
@@ -368,9 +315,7 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
             </svg>
             Add or Update Bakugan
           </button>
-          
         </div>
-        
       </div>
     );
   }
@@ -406,460 +351,74 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
       </div>
       
       {/* Bakugan Selection UI - Show when there are multiple matches */}
-      {!isUpdateMode && recommendations.length > 1 && (
-        <div className="mb-6 p-3 bg-blue-500/20 border border-blue-500/50 rounded-xl">
-          <h3 className="font-medium text-blue-300 mb-2">Multiple Bakugan Found - Select One:</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {recommendations.map((rec) => (
-              <div 
-                key={rec._id}
-                onClick={() => handleSelectBakugan(rec)}
-                className="p-2 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg cursor-pointer border border-gray-700/50 hover:border-blue-500/50 transition-all"
-              >
-                <div className="flex items-center gap-2">
-                  {rec.imageUrl && (
-                    <div className="w-12 h-12 bg-gray-900/50 rounded-md overflow-hidden flex items-center justify-center">
-                      <img 
-                        src={rec.imageUrl} 
-                        alt={rec.names[0]} 
-                        className="w-10 h-10 object-contain"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="font-medium text-blue-400 uppercase">{rec.names[0]}</div>
-                    <div className="text-xs text-gray-400">
-                      {rec.size} • {rec.element} • {rec.specialProperties || 'Normal'}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-white">฿{rec.currentPrice.toLocaleString()}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <BakuganSelectionList 
+        recommendations={recommendations} 
+        onSelectBakugan={handleSelectBakugan} 
+      />
       
+      {/* Selected Bakugan Display */}
       {selectedBakugan && (
-        <div className="mb-4 p-3 bg-blue-500/20 border border-blue-500/50 rounded-xl">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-medium text-blue-300 uppercase">Updating: {selectedBakugan.names[0]}</h3>
-                  <p className="text-sm text-gray-400">
-                    {selectedBakugan.size} • {selectedBakugan.element} • 
-                    {selectedBakugan.specialProperties || 'Normal'}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-300">Current Price</p>
-                  <p className="font-medium text-white">฿{selectedBakugan.currentPrice.toLocaleString()}</p>
-                </div>
-              </div>
-              
-              {/* Price History */}
-              {selectedBakugan.priceHistory && selectedBakugan.priceHistory.length > 0 && (
-                <div className="mt-3 border-t border-blue-500/30 pt-3">
-                  <p className="text-sm text-blue-300 mb-2">Price History:</p>
-                  <div className="max-h-32 overflow-y-auto">
-                    <table className="w-full text-xs">
-                      <thead className="text-gray-400">
-                        <tr>
-                          <th className="text-left pb-1">Date</th>
-                          <th className="text-right pb-1">Price</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedBakugan.priceHistory.map((history, index) => (
-                          <tr key={index} className="border-b border-gray-800/50 last:border-0">
-                            <td className="py-1 text-gray-400">
-                              {typeof history.timestamp === 'string' && history.timestamp.match(/^\d{4}-\d{2}-\d{2}$/)
-                                ? history.timestamp // Display the date string directly if it's in YYYY-MM-DD format
-                                : new Date(history.timestamp).toLocaleDateString()}
-                            </td>
-                            <td className="py-1 text-right text-gray-300">
-                              ฿{history.price.toLocaleString()}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-        </div>
+        <SelectedBakuganDisplay selectedBakugan={selectedBakugan} />
       )}
 
-      {/* Similar Bakugan Recommendations - Moved to top */}
+      {/* Similar Bakugan Recommendations */}
       {!isUpdateMode && names[0]?.trim().length > 2 && recommendations.length > 0 && (
-        <div className="mb-6 bg-gray-800/50 border border-gray-700/50 rounded-xl p-3">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-medium text-blue-300">Similar Bakugan Found:</h3>
-            {isSearching && (
-              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
-            )}
-          </div>
-          
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
-            {recommendations.map((rec) => (
-              <div 
-                key={rec._id} 
-                className="flex-shrink-0 w-[220px] p-2 bg-gray-800/70 hover:bg-gray-700/50 rounded-lg cursor-pointer border border-gray-700/50 hover:border-blue-500/50 transition-all"
-              >
-                {/* Display Bakugan image if available */}
-                {rec.imageUrl && (
-                  <div className="mb-2">
-                    <img 
-                      src={rec.imageUrl} 
-                      alt={rec.names[0]} 
-                      className="w-full h-24 object-contain bg-gray-900/50 rounded-lg"
-                    />
-                  </div>
-                )}
-                
-                <div className="font-medium text-blue-400 uppercase truncate">{rec.names[0]}</div>
-                <div className="text-xs text-gray-400 mb-1">{rec.size} • {rec.element} • {rec.specialProperties || 'Normal'}</div>
-                <div className="text-sm text-gray-300 mb-2">฿{rec.currentPrice.toLocaleString()}</div>
-                
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelectBakugan(rec);
-                    }}
-                    className="text-xs px-2 py-1 bg-blue-600/50 hover:bg-blue-500/50 text-blue-300 rounded flex-1"
-                  >
-                    Update
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setNames([...rec.names]);
-                      setSize(rec.size);
-                      setElement(rec.element);
-                      setSpecialProperties(rec.specialProperties || 'Normal');
-                    }}
-                    className="text-xs px-2 py-1 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 rounded flex-1"
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <BakuganRecommendations 
+          recommendations={recommendations}
+          isSearching={isSearching}
+          onSelectBakugan={handleSelectBakugan}
+          onCopyBakugan={handleCopyBakugan}
+        />
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {!isUpdateMode ? (
           <>
-            {/* Names */}
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-sm font-medium text-gray-300">
-                    Names
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleAddName}
-                    className="text-xs text-blue-400 hover:text-blue-300"
-                  >
-                    + Add another name
-                  </button>
-                </div>
-                
-                {names.map((name, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <div className="relative w-full">
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => {
-                          handleNameChange(index, e.target.value);
-                          if (index === 0 && e.target.value.length > 0) {
-                            setShowSuggestions(true);
-                          } else {
-                            setShowSuggestions(false);
-                          }
-                        }}
-                        onFocus={() => index === 0 && name.length > 0 && setShowSuggestions(true)}
-                        required={index === 0}
-                        className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white uppercase"
-                        placeholder={index === 0 ? "Primary name (required)" : `Alternative name ${index + 1}`}
-                      />
-                      
-                      {/* Name Suggestions Dropdown - Only for the first name field */}
-                      {index === 0 && showSuggestions && nameSuggestions.length > 0 && (
-                        <div 
-                          ref={suggestionRef}
-                          className="absolute z-10 mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                        >
-                          {nameSuggestions.map((suggestionName, idx) => (
-                            <div
-                              key={idx}
-                              className="px-4 py-2 hover:bg-gray-700 cursor-pointer text-gray-300"
-                              onClick={() => {
-                                handleNameChange(index, suggestionName);
-                                setShowSuggestions(false);
-                              }}
-                            >
-                              {suggestionName}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {index > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveName(index)}
-                        className="p-2 text-gray-400 hover:text-red-400"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <p className="text-xs text-gray-400 mt-1">Add multiple names (Thai, English, or community names)</p>
-              </div>
+            {/* Names Input */}
+            <BakuganNameInput 
+              names={names}
+              onNameChange={handleNameChange}
+              onAddName={handleAddName}
+              onRemoveName={handleRemoveName}
+              nameSuggestions={nameSuggestions}
+              showSuggestions={showSuggestions}
+              setShowSuggestions={setShowSuggestions}
+            />
 
-            {/* Size */}
-            <div>
-              <label htmlFor="size" className="block text-sm font-medium text-gray-300 mb-1">
-                Size
-              </label>
-              <select
-                id="size"
-                value={size}
-                onChange={(e) => setSize(e.target.value)}
-                required
-                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
-              >
-                <option value="B1">B1</option>
-                <option value="B2">B2</option>
-                <option value="B3">B3</option>
-              </select>
-            </div>
-
-            {/* Element Dropdown with Images */}
-            <div>
-              <label htmlFor="element" className="block text-sm font-medium text-gray-300 mb-1">
-                Element
-              </label>
-              <div className="relative">
-                <select
-                  id="element"
-                  value={element}
-                  onChange={(e) => setElement(e.target.value)}
-                  required
-                  className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
-                >
-                  {elements.map((elem) => (
-                    <option key={elem.value} value={elem.value}>
-                      {elem.value}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-              
-              {/* Display selected element image */}
-              <div className="mt-2 flex items-center">
-                <div className="w-8 h-8 mr-2 bg-gray-800 rounded-md overflow-hidden flex items-center justify-center">
-                  {element && (
-                    <img 
-                      src={elements.find(e => e.value === element)?.image || ''} 
-                      alt={element} 
-                      className="w-6 h-6 object-contain"
-                    />
-                  )}
-                </div>
-                <span className="text-sm text-gray-300">{element}</span>
-              </div>
-            </div>
-
-            {/* Special Properties Dropdown */}
-            <div>
-              <label htmlFor="specialProperties" className="block text-sm font-medium text-gray-300 mb-1">
-                Special Properties
-              </label>
-              <div className="relative">
-                <select
-                  id="specialProperties"
-                  value={specialProperties}
-                  onChange={(e) => setSpecialProperties(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
-                >
-                  {specialPropertiesOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Image URL */}
-            <div>
-              <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-300 mb-1">
-                Image URL (optional)
-              </label>
-              <input
-                type="text"
-                id="imageUrl"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
-                placeholder="Enter image URL"
-              />
-            </div>
-            
-            {/* Date Field */}
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-1">
-                Date
-              </label>
-              <input
-                type="date"
-                id="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
-              />
-            </div>
-
-            {/* Price */}
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-300 mb-1">
-                Initial Price (฿)
-              </label>
-              <input
-                type="number"
-                id="price"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                min="0"
-                step="0.01"
-                required
-                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
-                placeholder="Enter initial price"
-              />
-            </div>
-            
-            {/* Reference URI */}
-            <div>
-              <label htmlFor="referenceUri" className="block text-sm font-medium text-gray-300 mb-1">
-                Reference URI (optional)
-              </label>
-              <input
-                type="text"
-                id="referenceUri"
-                value={referenceUri}
-                onChange={(e) => setReferenceUri(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
-                placeholder="Enter reference URI for price"
-              />
-            </div>
-            
-            {/* Recommendations section removed from here and moved to the top */}
+            {/* Add Bakugan Fields */}
+            <AddBakuganFields 
+              size={size}
+              setSize={setSize}
+              element={element}
+              setElement={setElement}
+              specialProperties={specialProperties}
+              setSpecialProperties={setSpecialProperties}
+              series={series}
+              setSeries={setSeries}
+              imageUrl={imageUrl}
+              setImageUrl={setImageUrl}
+              price={price}
+              setPrice={setPrice}
+              referenceUri={referenceUri}
+              setReferenceUri={setReferenceUri}
+              date={date}
+              setDate={setDate}
+            />
           </>
         ) : (
           <>
-            {/* UPDATE MODE - Only show price update fields */}
-            {/* Date Field */}
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-1">
-                Date
-              </label>
-              <input
-                type="date"
-                id="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
-              />
-            </div>
-
-            {/* Price */}
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-300 mb-1">
-                New Price (฿)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  id="price"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  min="0"
-                  step="0.01"
-                  required
-                  className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
-                  placeholder="Enter new price"
-                />
-                {selectedBakugan && parseFloat(price) !== selectedBakugan.currentPrice && (
-                  <div className="absolute right-3 top-2 text-xs">
-                    {parseFloat(price) > selectedBakugan.currentPrice ? (
-                      <span className="text-green-400">+฿{(parseFloat(price) - selectedBakugan.currentPrice).toLocaleString()}</span>
-                    ) : (
-                      <span className="text-red-400">-฿{(selectedBakugan.currentPrice - parseFloat(price)).toLocaleString()}</span>
-                    )}
-                  </div>
-                )}
-              </div>
-              {selectedBakugan && (
-                <p className="text-xs text-gray-400 mt-1">
-                  Previous price: ฿{selectedBakugan.currentPrice.toLocaleString()}
-                </p>
-              )}
-            </div>
-            
-            {/* Notes */}
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-300 mb-1">
-                Notes (optional)
-              </label>
-              <textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
-                placeholder="Enter notes about this price update"
-                rows={2}
-              />
-            </div>
-            
-            {/* Reference URI */}
-            <div>
-              <label htmlFor="referenceUri" className="block text-sm font-medium text-gray-300 mb-1">
-                Reference URI (optional)
-              </label>
-              <input
-                type="text"
-                id="referenceUri"
-                value={referenceUri}
-                onChange={(e) => setReferenceUri(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
-                placeholder="Enter reference URI for price"
-              />
-            </div>
+            {/* Update Bakugan Fields */}
+            <UpdateBakuganFields 
+              price={price}
+              setPrice={setPrice}
+              notes={notes}
+              setNotes={setNotes}
+              referenceUri={referenceUri}
+              setReferenceUri={setReferenceUri}
+              date={date}
+              setDate={setDate}
+              currentPrice={selectedBakugan?.currentPrice}
+            />
           </>
         )}
 

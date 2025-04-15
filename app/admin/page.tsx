@@ -40,6 +40,7 @@ function AdminContent() {
     showSuggestions,
     setShowSuggestions,
     filters,
+    fetchBakuganItems,
   } = useBakuganData({ initialLimit: 20 });
 
   // State for modals
@@ -63,6 +64,11 @@ function AdminContent() {
   const handleCancelEdit = () => {
     setShowEditModal(false);
     setBakuganToEdit(null);
+    
+    // Refresh data after editing with a longer delay to ensure UI updates
+    setTimeout(async () => {
+      await fetchBakuganItems();
+    }, 500);
   };
 
 
@@ -71,6 +77,11 @@ function AdminContent() {
     setShowPriceModal(false);
     setBakuganToEdit(null);
     setSelectedPriceHistory([]);
+    
+    // Refresh data after updating price history with a longer delay to ensure UI updates
+    setTimeout(async () => {
+      await fetchBakuganItems();
+    }, 500);
   };
 
   // Handle update price button click
@@ -89,8 +100,23 @@ function AdminContent() {
   const handleDeletePriceHistoryWrapper = async (priceHistoryId: string, bakuganId: string) => {
     const success = await handleDeletePriceHistory(priceHistoryId, bakuganId);
     if (success && bakuganToEdit && bakuganToEdit._id === bakuganId) {
-      // Update the selected price history with the updated price history
-      setSelectedPriceHistory(priceHistories[bakuganId] || []);
+      // Update the selected price history with the updated price history after a delay
+      // to ensure the server has time to process the update
+      setTimeout(() => {
+        setSelectedPriceHistory(priceHistories[bakuganId] || []);
+      }, 300);
+    }
+    return success;
+  };
+  
+  // Wrapper for handleDeleteBakugan to refresh data after deletion
+  const handleDeleteBakuganWrapper = async (bakuganId: string) => {
+    const success = await handleDeleteBakugan(bakuganId);
+    if (success) {
+      // Refresh data after deletion with a longer delay to ensure UI updates
+      setTimeout(async () => {
+        await fetchBakuganItems();
+      }, 500);
     }
     return success;
   };
@@ -99,8 +125,11 @@ function AdminContent() {
   const handleUpdatePriceWrapper = async (id: string, price: number, notes: string, referenceUri: string, date: string) => {
     const success = await handleUpdatePrice(id, price, notes, referenceUri, date);
     if (success && bakuganToEdit && bakuganToEdit._id === id) {
-      // Update the selected price history with the updated price history
-      setSelectedPriceHistory(priceHistories[id] || []);
+      // Update the selected price history with the updated price history after a delay
+      // to ensure the server has time to process the update
+      setTimeout(() => {
+        setSelectedPriceHistory(priceHistories[id] || []);
+      }, 300);
     }
     return success;
   };
@@ -127,6 +156,7 @@ function AdminContent() {
     size: string,
     element: string,
     specialProperties: string,
+    series: string,
     imageUrl: string,
     currentPrice: number,
     referenceUri: string,
@@ -143,6 +173,7 @@ function AdminContent() {
           size,
           element,
           specialProperties,
+          series,
           imageUrl,
           currentPrice,
           referenceUri,
@@ -155,10 +186,22 @@ function AdminContent() {
         throw new Error(errorData.error || 'Failed to add Bakugan');
       }
 
+      // Get the newly added Bakugan data
+      const newBakugan = await response.json();
+      
       // Show success message
       setError('Bakugan added successfully!');
       
       // Reset form (AddBakuganForm handles this internally)
+      
+      // First switch to edit tab, then refresh data with a longer delay to ensure UI updates
+      setActiveTab('edit');
+      
+      // Use setTimeout with a longer delay to ensure the tab switch happens first
+      // and the server has time to process the new data
+      setTimeout(async () => {
+        await fetchBakuganItems();
+      }, 500);
     } catch (err: any) {
       console.error('Error adding Bakugan:', err);
       setError(err.message || 'Failed to add Bakugan');
@@ -285,7 +328,9 @@ function AdminContent() {
       <div className="mb-8 border-b border-gray-700">
         <nav className="flex space-x-4">
           <button
-            onClick={() => setActiveTab('add')}
+            onClick={() => {
+              setActiveTab('add');
+            }}
             className={`px-4 py-3 font-medium text-sm rounded-t-lg ${
               activeTab === 'add'
                 ? 'bg-blue-600/20 text-blue-300 border-b-2 border-blue-500'
@@ -295,7 +340,13 @@ function AdminContent() {
             Add New Bakugan
           </button>
           <button
-            onClick={() => setActiveTab('edit')}
+            onClick={() => {
+              setActiveTab('edit');
+              // Refresh data when switching to edit tab with a longer delay to ensure UI updates
+              setTimeout(async () => {
+                await fetchBakuganItems();
+              }, 500);
+            }}
             className={`px-4 py-3 font-medium text-sm rounded-t-lg ${
               activeTab === 'edit'
                 ? 'bg-purple-600/20 text-purple-300 border-b-2 border-purple-500'
@@ -333,7 +384,7 @@ function AdminContent() {
             ? 'bg-green-500/20 border border-green-500/50 text-green-300' 
             : 'bg-red-500/20 border border-red-500/50 text-red-300'
         }`}>
-          <p className="font-semibold">{error}</p>
+          <p className="font-semibold">{error.includes('success') ? error : `Error: ${error}`}</p>
         </div>
       )}
       
@@ -461,8 +512,9 @@ function AdminContent() {
               loading={loading}
               error={bakuganError}
               onEdit={handleEditBakugan}
-              onDelete={handleDeleteBakugan}
+              onDelete={handleDeleteBakuganWrapper}
               onUpdatePrice={handleUpdateBakuganPrice}
+              onRefresh={fetchBakuganItems}
             />
           </div>
         </div>
@@ -516,6 +568,7 @@ function AdminContent() {
               initialSize={bakuganToEdit.size}
               initialElement={bakuganToEdit.element}
               initialSpecialProperties={bakuganToEdit.specialProperties || ''}
+              initialSeries={bakuganToEdit.series || ''}
               initialImageUrl={bakuganToEdit.imageUrl || ''}
               initialReferenceUri={bakuganToEdit.referenceUri || ''}
               onUpdateDetails={handleUpdateDetails}

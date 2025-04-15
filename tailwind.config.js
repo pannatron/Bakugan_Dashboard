@@ -18,6 +18,7 @@ module.exports = {
         'pulse-slow': 'pulse-slow 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'fade-in': 'fadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) forwards',
         'shine-slow': 'shine 3s ease-in-out infinite',
+        'shimmer': 'shimmer 2s linear infinite',
       },
       keyframes: {
         'gradient-x': {
@@ -42,6 +43,10 @@ module.exports = {
           '20%': { opacity: '0.5' },
           '40%': { opacity: '0.3', transform: 'translateX(100%)' },
           '100%': { opacity: '0', transform: 'translateX(100%)' },
+        },
+        'shimmer': {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
         },
       },
       backgroundImage: {

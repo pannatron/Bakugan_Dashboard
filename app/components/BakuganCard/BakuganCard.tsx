@@ -17,6 +17,7 @@ const BakuganCard = ({
   size,
   element,
   specialProperties,
+  series,
   imageUrl,
   currentPrice,
   referenceUri,
@@ -93,6 +94,7 @@ const BakuganCard = ({
             size={size}
             element={element}
             specialProperties={specialProperties}
+            series={series}
             imageUrl={imageUrl}
           />
           
@@ -133,6 +135,7 @@ const BakuganCard = ({
               initialSize={size}
               initialElement={element}
               initialSpecialProperties={specialProperties}
+              initialSeries={series}
               initialImageUrl={imageUrl}
               initialReferenceUri={referenceUri}
               onUpdateDetails={onUpdateDetails}

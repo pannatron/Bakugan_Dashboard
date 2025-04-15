@@ -13,6 +13,7 @@ export interface BakuganCardProps {
   size: string;
   element: string;
   specialProperties: string;
+  series?: string;
   imageUrl: string;
   currentPrice: number;
   referenceUri: string;
@@ -24,9 +25,10 @@ export interface BakuganCardProps {
     size: string,
     element: string,
     specialProperties: string,
+    series: string,
     imageUrl: string,
     referenceUri: string
-  ) => void;
+  ) => Promise<boolean>;
   onDeleteBakugan?: (id: string) => void;
 }
 

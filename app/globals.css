@@ -34,13 +34,7 @@ body {
     @apply space-y-4 sm:space-y-6 lg:space-y-8;
   }
 
-  .noise-texture {
-    background-image: url('/noise.png');
-    background-repeat: repeat;
-    background-size: 200px 200px;
-    opacity: 0.03;
-    mix-blend-mode: overlay;
-  }
+  /* Removed noise-texture class as it's no longer used */
 
   .animate-gradient {
     background-size: 200% 200%;

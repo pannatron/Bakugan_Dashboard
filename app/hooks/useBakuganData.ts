@@ -24,7 +24,7 @@ interface FilterState {
   specialPropertiesFilter: string;
   minPriceFilter: string;
   maxPriceFilter: string;
-  filterMode: 'all' | 'bakugan' | 'bakutech';
+  filterMode: 'all' | 'bakugan' | 'bakutech' | 'battle-brawlers' | 'new-vestroia' | 'gundalian-invaders' | 'mechtanium-surge';
 }
 
 export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakuganDataProps = {}) {
@@ -90,7 +90,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
   }, []);
 
   // Update filter values
-  const updateFilter = useCallback((key: keyof FilterState, value: string | 'all' | 'bakugan' | 'bakutech') => {
+  const updateFilter = useCallback((key: keyof FilterState, value: string | 'all' | 'bakugan' | 'bakutech' | 'battle-brawlers' | 'new-vestroia' | 'gundalian-invaders' | 'mechtanium-surge') => {
     setFilters(prev => ({
       ...prev,
       [key]: value
@@ -155,8 +155,25 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
       if (filters.nameFilter) params.append('search', filters.nameFilter);
       if (filters.sizeFilter) params.append('size', filters.sizeFilter);
       if (filters.elementFilter) params.append('element', filters.elementFilter);
-      if (filters.filterMode === 'bakutech') params.append('bakutech', 'true');
-      else if (filters.filterMode === 'bakugan') params.append('excludeSize', 'B3');
+      
+      // Handle filter modes
+      if (filters.filterMode === 'bakutech') {
+        params.append('bakutech', 'true');
+      } else if (filters.filterMode === 'bakugan') {
+        params.append('excludeSize', 'B3');
+      } else if (filters.filterMode === 'battle-brawlers') {
+        params.append('excludeSize', 'B3');
+        params.append('series', 'Battle Brawlers Vol.1');
+      } else if (filters.filterMode === 'new-vestroia') {
+        params.append('excludeSize', 'B3');
+        params.append('series', 'New Vestroia Vol.2');
+      } else if (filters.filterMode === 'gundalian-invaders') {
+        params.append('excludeSize', 'B3');
+        params.append('series', 'Gundalian Invaders Vol.3');
+      } else if (filters.filterMode === 'mechtanium-surge') {
+        params.append('excludeSize', 'B3');
+        params.append('series', 'Mechtanium Surge Vol.4');
+      }
       
       // Add price filters if needed
       if (filters.minPriceFilter) params.append('minPrice', filters.minPriceFilter);
@@ -370,6 +387,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
     size: string,
     element: string,
     specialProperties: string,
+    series: string,
     imageUrl: string,
     referenceUri: string
   ) => {
@@ -387,6 +405,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
           size,
           element,
           specialProperties,
+          series,
           imageUrl,
           referenceUri,
         }),
@@ -406,14 +425,31 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
             size, 
             element, 
             specialProperties, 
+            series,
             imageUrl, 
             referenceUri 
           } : item
         )
       );
       
-      // Refresh the list to get updated data from the server
-      await fetchBakuganItems();
+      // Clear any cache entries related to this Bakugan
+      // This ensures fresh data will be fetched next time
+      setCache(prev => {
+        const newCache = { ...prev };
+        // Remove any cache entries that might contain this Bakugan
+        Object.keys(newCache).forEach(key => {
+          if (key.includes('bakugan') || key.includes(bakuganId)) {
+            delete newCache[key];
+          }
+        });
+        return newCache;
+      });
+      
+      // Add a delay before refreshing the data to ensure the server has time to process the update
+      setTimeout(async () => {
+        // Refresh the list to get updated data from the server
+        await fetchBakuganItems();
+      }, 500);
       
       // Show success message
       setError('Bakugan details updated successfully!');
@@ -551,8 +587,24 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
         return newHistories;
       });
       
-      // Refresh the list to get updated data from the server
-      await fetchBakuganItems();
+      // Clear any cache entries related to Bakugan data
+      // This ensures fresh data will be fetched next time
+      setCache(prev => {
+        const newCache = { ...prev };
+        // Remove any cache entries that might contain Bakugan data
+        Object.keys(newCache).forEach(key => {
+          if (key.includes('bakugan') || key.includes(bakuganId)) {
+            delete newCache[key];
+          }
+        });
+        return newCache;
+      });
+      
+      // Add a delay before refreshing the data to ensure the server has time to process the deletion
+      setTimeout(async () => {
+        // Refresh the list to get updated data from the server
+        await fetchBakuganItems();
+      }, 500);
       
       // Show success message
       setError('Bakugan deleted successfully!');
@@ -653,5 +705,6 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
     handleUpdateDetails,
     handleDeleteBakugan,
     handleDeletePriceHistory,
+    fetchBakuganItems,
   };
 }

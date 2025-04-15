@@ -155,6 +155,7 @@ export async function PUT(
       size, 
       element, 
       specialProperties, 
+      series,
       imageUrl,
       referenceUri 
     } = body;
@@ -189,6 +190,7 @@ export async function PUT(
     bakugan.size = size;
     bakugan.element = element;
     bakugan.specialProperties = specialProperties || '';
+    bakugan.series = series || '';
     if (imageUrl) bakugan.imageUrl = imageUrl;
     if (referenceUri) bakugan.referenceUri = referenceUri;
     

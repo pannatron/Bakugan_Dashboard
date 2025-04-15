@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { elements } from '../types/bakugan';
+import { elements, seriesOptions } from '../types/bakugan';
 
 interface BakuganFiltersProps {
   nameFilter: string;

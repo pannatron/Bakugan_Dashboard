@@ -5,6 +5,7 @@ export interface Bakugan {
   size: string;
   element: string;
   specialProperties: string;
+  series: string;
   imageUrl: string;
   currentPrice: number;
   referenceUri: string;
@@ -36,4 +37,13 @@ export const elements = [
   { value: 'Subterra', image: '/element/Subterra.png' },
   { value: 'Haos', image: '/element/Haos.webp' },
   { value: 'Darkus', image: '/element/Darkus.webp' },
+];
+
+// Series definitions
+export const seriesOptions = [
+  { value: 'Battle Brawlers Vol.1', label: 'Battle Brawlers Vol.1' },
+  { value: 'New Vestroia Vol.2', label: 'New Vestroia Vol.2' },
+  { value: 'Gundalian Invaders Vol.3', label: 'Gundalian Invaders Vol.3' },
+  { value: 'Mechtanium Surge Vol.4', label: 'Mechtanium Surge Vol.4' },
+  { value: 'BakuTech', label: 'BakuTech' },
 ];
