@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import AddBakuganForm from '@/app/components/AddBakuganForm';
 import ManageRecommendations from '@/app/components/ManageRecommendations';
 import ManageBakutechRecommendations from '@/app/components/ManageBakutechRecommendations';
+import UserManagement from '@/app/components/UserManagement';
 import Link from 'next/link';
 import { useBakuganData } from '@/app/hooks/useBakuganData';
 import AdminBakuganTable from '@/app/components/AdminBakuganTable';
@@ -18,9 +19,17 @@ function AdminContent() {
   const [error, setError] = useState<string | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    // Check if we're in the browser environment
+    if (typeof window !== 'undefined') {
+      // Try to get authentication state from localStorage
+      const storedAuth = localStorage.getItem('adminAuthenticated');
+      return storedAuth === 'true';
+    }
+    return false;
+  });
   const [loginLoading, setLoginLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'add' | 'edit' | 'recommendations' | 'bakutech'>('add');
+  const [activeTab, setActiveTab] = useState<'add' | 'edit' | 'recommendations' | 'bakutech' | 'users'>('add');
   
   // Get Bakugan data for edit/delete tab
   const {
@@ -142,12 +151,21 @@ function AdminContent() {
     // Simple hardcoded check - username: admin, password: admin
     if (username === 'admin' && password === 'admin') {
       setIsAuthenticated(true);
+      // Store authentication state in localStorage
+      localStorage.setItem('adminAuthenticated', 'true');
       setError(null);
     } else {
       setError('Invalid username or password');
     }
     
     setLoginLoading(false);
+  };
+  
+  // Handle logout
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    // Remove authentication state from localStorage
+    localStorage.removeItem('adminAuthenticated');
   };
 
   // Add a new Bakugan (admin only)
@@ -322,11 +340,17 @@ function AdminContent() {
         <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-blue-500 to-blue-600 animate-gradient-x">
           Admin Dashboard
         </h1>
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 rounded-lg bg-red-600/30 text-red-300 border border-red-600/30 hover:bg-red-600/50 transition-colors"
+        >
+          Logout
+        </button>
       </div>
       
       {/* Tab Navigation */}
       <div className="mb-8 border-b border-gray-700">
-        <nav className="flex space-x-4">
+        <nav className="flex flex-wrap space-x-2 md:space-x-4">
           <button
             onClick={() => {
               setActiveTab('add');
@@ -375,6 +399,16 @@ function AdminContent() {
           >
             BakuTech Recommendations
           </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`px-4 py-3 font-medium text-sm rounded-t-lg ${
+              activeTab === 'users'
+                ? 'bg-indigo-600/20 text-indigo-300 border-b-2 border-indigo-500'
+                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/30'
+            }`}
+          >
+            User Management
+          </button>
         </nav>
       </div>
       
@@ -410,7 +444,7 @@ function AdminContent() {
             
             {/* Search and Filter Section */}
             <div className="mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 {/* Name Search with Suggestions */}
                 <div className="relative">
                   <label htmlFor="nameFilter" className="block text-sm font-medium text-gray-300 mb-1">
@@ -465,6 +499,26 @@ function AdminContent() {
                     <option value="Subterra">Subterra</option>
                     <option value="Haos">Haos</option>
                     <option value="Darkus">Darkus</option>
+                  </select>
+                </div>
+                
+                {/* Series Filter */}
+                <div>
+                  <label htmlFor="seriesFilter" className="block text-sm font-medium text-gray-300 mb-1">
+                    Filter by Series
+                  </label>
+                  <select
+                    id="seriesFilter"
+                    value={filters.filterMode}
+                    onChange={(e) => updateFilter('filterMode', e.target.value as any)}
+                    className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-white"
+                  >
+                    <option value="all">All Series</option>
+                    <option value="battle-brawlers">Battle Brawlers Vol.1</option>
+                    <option value="new-vestroia">New Vestroia Vol.2</option>
+                    <option value="gundalian-invaders">Gundalian Invaders Vol.3</option>
+                    <option value="mechtanium-surge">Mechtanium Surge Vol.4</option>
+                    <option value="bakutech">BakuTech</option>
                   </select>
                 </div>
               </div>
@@ -549,6 +603,15 @@ function AdminContent() {
               <ManageBakutechRecommendations />
             </div>
           </div>
+        </div>
+      )}
+      
+      {activeTab === 'users' && (
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-indigo-500 to-indigo-600 animate-gradient-x mb-6">
+            User Management
+          </h2>
+          <UserManagement />
         </div>
       )}
       
