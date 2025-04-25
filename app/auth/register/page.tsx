@@ -385,7 +385,7 @@ export default function Register() {
 
                 <button
                   type="submit"
-                  disabled={emailLoading || (emailChecked && !emailAvailable)}
+                  disabled={emailLoading || !emailChecked || !emailAvailable}
                   className="w-full px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold hover:from-blue-500 hover:to-blue-400 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {emailLoading ? 'Sending verification code...' : 'Send verification code'}
