@@ -18,7 +18,12 @@ export interface BakuganCardProps {
   currentPrice: number;
   referenceUri: string;
   priceHistory: PricePoint[];
+  isInFavorites?: boolean;
   isInPortfolio?: boolean;
+  favoriteId?: string;
+  portfolioId?: string;
+  quantity?: number;
+  activeTab?: 'portfolio' | 'favorites' | 'main';
   onUpdatePrice: (id: string, price: number, notes: string, referenceUri: string, date: string) => void;
   onUpdateDetails?: (
     id: string,
@@ -32,7 +37,10 @@ export interface BakuganCardProps {
   ) => Promise<boolean>;
   onDeleteBakugan?: (id: string) => void;
   onAddToFavorite?: (id: string) => void;
-  onRemoveFromFavorite?: (portfolioId: string) => void;
+  onRemoveFromFavorite?: (favoriteId: string) => void;
+  onAddToPortfolio?: (id: string, quantity?: number) => void;
+  onRemoveFromPortfolio?: (portfolioId: string) => void;
+  onUpdatePortfolioQuantity?: (portfolioId: string, quantity: number) => void;
 }
 
 export interface PriceTrend {

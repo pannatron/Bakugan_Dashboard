@@ -15,7 +15,9 @@ interface BakuganListProps {
     limit: number;
   };
   isAdmin: boolean;
-  portfolioItems?: string[]; // Array of bakugan IDs in the user's portfolio
+  favoriteItems?: { id: string; bakuganId: string }[]; // Array of favorite items with IDs
+  portfolioItems?: { id: string; bakuganId: string; quantity?: number }[]; // Array of portfolio items with IDs and quantities
+  activeTab?: 'portfolio' | 'favorites' | 'main';
   onUpdatePrice: (
     bakuganId: string,
     price: number,
@@ -35,7 +37,10 @@ interface BakuganListProps {
   ) => Promise<boolean>;
   onDeleteBakugan?: (bakuganId: string) => void;
   onAddToFavorite?: (bakuganId: string) => void;
-  onRemoveFromFavorite?: (portfolioId: string) => void;
+  onRemoveFromFavorite?: (favoriteId: string) => void;
+  onAddToPortfolio?: (bakuganId: string, quantity?: number) => void;
+  onRemoveFromPortfolio?: (portfolioId: string) => void;
+  onUpdatePortfolioQuantity?: (portfolioId: string, quantity: number) => void;
 }
 
 export default function BakuganList({
@@ -46,12 +51,17 @@ export default function BakuganList({
   priceHistories,
   pagination,
   isAdmin,
+  favoriteItems = [],
   portfolioItems = [],
+  activeTab = 'main',
   onUpdatePrice,
   onUpdateDetails,
   onDeleteBakugan,
   onAddToFavorite,
-  onRemoveFromFavorite
+  onRemoveFromFavorite,
+  onAddToPortfolio,
+  onRemoveFromPortfolio,
+  onUpdatePortfolioQuantity
 }: BakuganListProps) {
   const { data: session } = useSession();
   return (
@@ -165,12 +175,20 @@ export default function BakuganList({
                     currentPrice={bakugan.currentPrice}
                     referenceUri={bakugan.referenceUri}
                     priceHistory={priceHistories[bakugan._id] || []}
-                    isInPortfolio={portfolioItems.includes(bakugan._id)}
+                    isInFavorites={favoriteItems.some(item => item.bakuganId === bakugan._id)}
+                    isInPortfolio={portfolioItems.some(item => item.bakuganId === bakugan._id)}
+                    favoriteId={favoriteItems.find(item => item.bakuganId === bakugan._id)?.id}
+                    portfolioId={portfolioItems.find(item => item.bakuganId === bakugan._id)?.id}
+                    quantity={portfolioItems.find(item => item.bakuganId === bakugan._id)?.quantity}
+                    activeTab={activeTab}
                     onUpdatePrice={onUpdatePrice}
                     onUpdateDetails={isAdmin ? onUpdateDetails : undefined}
                     onDeleteBakugan={isAdmin ? onDeleteBakugan : undefined}
                     onAddToFavorite={onAddToFavorite}
                     onRemoveFromFavorite={onRemoveFromFavorite}
+                    onAddToPortfolio={onAddToPortfolio}
+                    onRemoveFromPortfolio={onRemoveFromPortfolio}
+                    onUpdatePortfolioQuantity={onUpdatePortfolioQuantity}
                   />
                 </div>
               ))

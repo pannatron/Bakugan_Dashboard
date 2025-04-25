@@ -24,12 +24,20 @@ const BakuganCard = ({
   currentPrice,
   referenceUri,
   priceHistory,
+  isInFavorites,
   isInPortfolio,
+  favoriteId,
+  portfolioId,
+  quantity,
+  activeTab = 'main',
   onUpdatePrice,
   onUpdateDetails,
   onDeleteBakugan,
   onAddToFavorite,
   onRemoveFromFavorite,
+  onAddToPortfolio,
+  onRemoveFromPortfolio,
+  onUpdatePortfolioQuantity,
 }: BakuganCardProps) => {
   const router = useRouter();
   const { user } = useAuth();
@@ -113,7 +121,7 @@ const BakuganCard = ({
             priceTrend={priceTrend}
           />
           
-          {/* Admin buttons and Favorite button */}
+          {/* Admin buttons and action buttons */}
           <div className="flex flex-col gap-2">
             {user?.isAdmin && (
               <AdminButtons
@@ -126,10 +134,10 @@ const BakuganCard = ({
               />
             )}
             
-            {/* Favorite Button */}
-            {isInPortfolio ? (
+            {/* Favorite Button - Always show in main list */}
+            {isInFavorites ? (
               <button
-                onClick={() => onRemoveFromFavorite && onRemoveFromFavorite(id)}
+                onClick={() => onRemoveFromFavorite && favoriteId && onRemoveFromFavorite(favoriteId)}
                 className="w-full px-4 py-2 rounded-lg bg-red-600/30 text-red-300 border border-red-600/30 hover:bg-red-600/50 transition-colors flex items-center justify-center gap-2"
                 disabled={!session}
               >
@@ -154,6 +162,38 @@ const BakuganCard = ({
                 </svg>
                 {session ? 'Add to Favorites' : 'Login to Add to Favorites'}
               </button>
+            )}
+            
+            {/* Portfolio Button - Only show in favorites view */}
+            {activeTab === 'favorites' && (
+              isInPortfolio ? (
+                <button
+                  onClick={() => onRemoveFromPortfolio && portfolioId && onRemoveFromPortfolio(portfolioId)}
+                  className="w-full px-4 py-2 rounded-lg bg-purple-600/30 text-purple-300 border border-purple-600/30 hover:bg-purple-600/50 transition-colors flex items-center justify-center gap-2"
+                  disabled={!session}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17A3 3 0 015 5zm4 1V5a1 1 0 10-2 0v1H5a1 1 0 100 2h2v1a2 2 0 104 0V8h2a1 1 0 100-2h-2V5a1 1 0 10-2 0z" clipRule="evenodd" />
+                  </svg>
+                  Remove from Portfolio
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (session) {
+                      onAddToPortfolio && onAddToPortfolio(id);
+                    } else {
+                      signIn();
+                    }
+                  }}
+                  className="w-full px-4 py-2 rounded-lg bg-green-600/30 text-green-300 border border-green-600/30 hover:bg-green-600/50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Add to Portfolio
+                </button>
+              )
             )}
           </div>
         </div>

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import connectDB from '@/app/lib/mongodb';
-import Portfolio from '@/app/lib/models/Portfolio';
+import Favorites from '@/app/lib/models/Favorites';
 import Bakugan from '@/app/lib/models/Bakugan';
 
-// GET /api/portfolio - Get user's portfolio
+// GET /api/favorites - Get user's favorites
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession();
@@ -15,35 +15,34 @@ export async function GET(req: NextRequest) {
     
     await connectDB();
     
-    // Get all portfolio items for the user
-    const portfolioItems = await Portfolio.find({ userId: session.user.email }).sort({ addedAt: -1 });
+    // Get all favorite items for the user
+    const favoriteItems = await Favorites.find({ userId: session.user.email }).sort({ addedAt: -1 });
     
-    // Get all bakugan IDs from the portfolio
-    const bakuganIds = portfolioItems.map(item => item.bakuganId);
+    // Get all bakugan IDs from the favorites
+    const bakuganIds = favoriteItems.map(item => item.bakuganId);
     
-    // Fetch the bakugan details for all items in the portfolio
+    // Fetch the bakugan details for all items in the favorites
     const bakuganItems = await Bakugan.find({ _id: { $in: bakuganIds } });
     
-    // Map the bakugan details to the portfolio items
-    const portfolioWithDetails = portfolioItems.map(item => {
+    // Map the bakugan details to the favorite items
+    const favoritesWithDetails = favoriteItems.map(item => {
       const bakugan = bakuganItems.find(b => b._id.toString() === item.bakuganId);
       return {
-        portfolioId: item._id,
+        favoriteId: item._id,
         addedAt: item.addedAt,
         notes: item.notes,
-        quantity: item.quantity || 1,
         bakugan: bakugan || null
       };
     });
     
-    return NextResponse.json(portfolioWithDetails);
+    return NextResponse.json(favoritesWithDetails);
   } catch (error: any) {
-    console.error('Error fetching portfolio:', error);
-    return NextResponse.json({ error: error.message || 'Failed to fetch portfolio' }, { status: 500 });
+    console.error('Error fetching favorites:', error);
+    return NextResponse.json({ error: error.message || 'Failed to fetch favorites' }, { status: 500 });
   }
 }
 
-// POST /api/portfolio - Add bakugan to portfolio
+// POST /api/favorites - Add bakugan to favorites
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession();
@@ -52,7 +51,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
     
-    const { bakuganId, notes, quantity = 1 } = await req.json();
+    const { bakuganId, notes } = await req.json();
     
     if (!bakuganId) {
       return NextResponse.json({ error: 'Bakugan ID is required' }, { status: 400 });
@@ -66,39 +65,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Bakugan not found' }, { status: 404 });
     }
     
-    // Check if the bakugan is already in the portfolio
-    const existingItem = await Portfolio.findOne({ 
+    // Check if the bakugan is already in favorites
+    const existingItem = await Favorites.findOne({ 
       userId: session.user.email, 
       bakuganId 
     });
     
     if (existingItem) {
-      return NextResponse.json({ error: 'Bakugan already in portfolio' }, { status: 400 });
+      return NextResponse.json({ error: 'Bakugan already in favorites' }, { status: 400 });
     }
     
-    // Add the bakugan to the portfolio
-    const portfolioItem = new Portfolio({
+    // Add the bakugan to favorites
+    const favoriteItem = new Favorites({
       userId: session.user.email,
       bakuganId,
       addedAt: new Date(),
-      notes: notes || '',
-      quantity
+      notes: notes || ''
     });
     
-    await portfolioItem.save();
+    await favoriteItem.save();
     
     return NextResponse.json({ 
-      message: 'Bakugan added to portfolio',
-      portfolioItem: {
-        id: portfolioItem._id,
+      message: 'Bakugan added to favorites',
+      favoriteItem: {
+        id: favoriteItem._id,
         bakuganId,
-        addedAt: portfolioItem.addedAt,
-        notes: portfolioItem.notes,
-        quantity: portfolioItem.quantity
+        addedAt: favoriteItem.addedAt,
+        notes: favoriteItem.notes
       }
     });
   } catch (error: any) {
-    console.error('Error adding to portfolio:', error);
-    return NextResponse.json({ error: error.message || 'Failed to add to portfolio' }, { status: 500 });
+    console.error('Error adding to favorites:', error);
+    return NextResponse.json({ error: error.message || 'Failed to add to favorites' }, { status: 500 });
   }
 }

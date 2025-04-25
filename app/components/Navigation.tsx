@@ -57,16 +57,28 @@ const Navigation = () => {
               Bakugan List
             </Link>
             {user && (
-              <Link 
-                href="/portfolio" 
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  pathname.includes('/portfolio') 
-                    ? 'text-green-300 bg-green-900/20' 
-                    : 'text-gray-300 hover:text-green-300 hover:bg-gray-800'
-                }`}
-              >
-                My Portfolio
-              </Link>
+              <>
+                <Link 
+                  href="/favorites" 
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    pathname.includes('/favorites') 
+                      ? 'text-red-300 bg-red-900/20' 
+                      : 'text-gray-300 hover:text-red-300 hover:bg-gray-800'
+                  }`}
+                >
+                  Favorites
+                </Link>
+                <Link 
+                  href="/portfolio" 
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    pathname.includes('/portfolio') 
+                      ? 'text-green-300 bg-green-900/20' 
+                      : 'text-gray-300 hover:text-green-300 hover:bg-gray-800'
+                  }`}
+                >
+                  Portfolio
+                </Link>
+              </>
             )}
             {user?.isAdmin && (
               <Link 
@@ -158,17 +170,30 @@ const Navigation = () => {
               Bakugan List
             </Link>
             {user && (
-              <Link 
-                href="/portfolio" 
-                className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  pathname.includes('/portfolio') 
-                    ? 'text-green-300 bg-green-900/20' 
-                    : 'text-gray-300 hover:text-green-300 hover:bg-gray-800'
-                }`}
-                onClick={closeMenu}
-              >
-                My Portfolio
-              </Link>
+              <>
+                <Link 
+                  href="/favorites" 
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${
+                    pathname.includes('/favorites') 
+                      ? 'text-red-300 bg-red-900/20' 
+                      : 'text-gray-300 hover:text-red-300 hover:bg-gray-800'
+                  }`}
+                  onClick={closeMenu}
+                >
+                  Favorites
+                </Link>
+                <Link 
+                  href="/portfolio" 
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${
+                    pathname.includes('/portfolio') 
+                      ? 'text-green-300 bg-green-900/20' 
+                      : 'text-gray-300 hover:text-green-300 hover:bg-gray-800'
+                  }`}
+                  onClick={closeMenu}
+                >
+                  Portfolio
+                </Link>
+              </>
             )}
             {user?.isAdmin && (
               <Link 

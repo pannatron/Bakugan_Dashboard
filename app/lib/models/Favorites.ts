@@ -1,14 +1,13 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IPortfolioItem extends Document {
+export interface IFavoriteItem extends Document {
   userId: string;
   bakuganId: string;
   addedAt: Date;
   notes?: string;
-  quantity: number;
 }
 
-const PortfolioItemSchema = new Schema<IPortfolioItem>(
+const FavoriteItemSchema = new Schema<IFavoriteItem>(
   {
     userId: {
       type: String,
@@ -28,11 +27,6 @@ const PortfolioItemSchema = new Schema<IPortfolioItem>(
       type: String,
       required: false,
     },
-    quantity: {
-      type: Number,
-      required: true,
-      default: 1,
-    },
   },
   {
     timestamps: true,
@@ -40,8 +34,8 @@ const PortfolioItemSchema = new Schema<IPortfolioItem>(
 );
 
 // Create a compound index for userId and bakuganId to ensure uniqueness
-PortfolioItemSchema.index({ userId: 1, bakuganId: 1 }, { unique: true });
+FavoriteItemSchema.index({ userId: 1, bakuganId: 1 }, { unique: true });
 
-const Portfolio = mongoose.models.Portfolio || mongoose.model<IPortfolioItem>('Portfolio', PortfolioItemSchema);
+const Favorites = mongoose.models.Favorites || mongoose.model<IFavoriteItem>('Favorites', FavoriteItemSchema);
 
-export default Portfolio;
+export default Favorites;

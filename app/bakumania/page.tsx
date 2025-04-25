@@ -14,7 +14,8 @@ function BakumaniaContent() {
   const { data: session } = useSession();
   const user = session?.user;
   const [isFilterOpen, setIsFilterOpen] = useState(true);
-  const [portfolioItems, setPortfolioItems] = useState<string[]>([]);
+  const [favoriteItems, setFavoriteItems] = useState<{ id: string; bakuganId: string }[]>([]);
+  const [portfolioItems, setPortfolioItems] = useState<{ id: string; bakuganId: string; quantity?: number }[]>([]);
   
   const {
     filteredItems,
@@ -36,31 +37,50 @@ function BakumaniaContent() {
     handleDeleteBakugan,
   } = useBakuganData();
 
-  // Fetch portfolio items when session changes
+  // Fetch favorites and portfolio items when session changes
   useEffect(() => {
-    const fetchPortfolio = async () => {
-      // Only fetch portfolio data if user is authenticated
+    const fetchUserData = async () => {
+      // Only fetch data if user is authenticated
       if (!session?.user) {
+        setFavoriteItems([]);
         setPortfolioItems([]);
         return;
       }
       
       try {
-        const response = await fetch('/api/portfolio');
-        if (response.ok) {
-          const data = await response.json();
-          // Extract bakugan IDs from portfolio items
-          const bakuganIds = data.map((item: any) => item.bakugan?._id).filter(Boolean);
-          setPortfolioItems(bakuganIds);
+        // Fetch favorites
+        const favoritesResponse = await fetch('/api/favorites');
+        if (favoritesResponse.ok) {
+          const favoritesData = await favoritesResponse.json();
+          // Extract favorite items with IDs
+          const favorites = favoritesData.map((item: any) => ({
+            id: item.favoriteId,
+            bakuganId: item.bakugan?._id
+          })).filter((item: any) => item.bakuganId);
+          setFavoriteItems(favorites);
+        }
+        
+        // Fetch portfolio
+        const portfolioResponse = await fetch('/api/portfolio');
+        if (portfolioResponse.ok) {
+          const portfolioData = await portfolioResponse.json();
+          // Extract portfolio items with IDs and quantities
+          const portfolio = portfolioData.map((item: any) => ({
+            id: item.portfolioId,
+            bakuganId: item.bakugan?._id,
+            quantity: item.quantity || 1
+          })).filter((item: any) => item.bakuganId);
+          setPortfolioItems(portfolio);
         }
       } catch (error) {
-        console.error('Error fetching portfolio:', error);
-        // Set empty array on error
+        console.error('Error fetching user data:', error);
+        // Set empty arrays on error
+        setFavoriteItems([]);
         setPortfolioItems([]);
       }
     };
 
-    fetchPortfolio();
+    fetchUserData();
   }, [session]);
 
   // Handle adding a bakugan to favorites
@@ -68,7 +88,7 @@ function BakumaniaContent() {
     if (!session?.user) return;
 
     try {
-      const response = await fetch('/api/portfolio', {
+      const response = await fetch('/api/favorites', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -77,8 +97,12 @@ function BakumaniaContent() {
       });
 
       if (response.ok) {
-        // Add the bakugan to the local portfolio items state
-        setPortfolioItems(prev => [...prev, bakuganId]);
+        const data = await response.json();
+        // Add the bakugan to the local favorites items state
+        setFavoriteItems(prev => [...prev, { 
+          id: data.favoriteItem.id, 
+          bakuganId 
+        }]);
       }
     } catch (error) {
       console.error('Error adding to favorites:', error);
@@ -86,7 +110,52 @@ function BakumaniaContent() {
   };
 
   // Handle removing a bakugan from favorites
-  const handleRemoveFromFavorite = async (portfolioId: string) => {
+  const handleRemoveFromFavorite = async (favoriteId: string) => {
+    if (!session?.user) return;
+
+    try {
+      const response = await fetch(`/api/favorites/${favoriteId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Remove the bakugan from the local favorites items state
+        setFavoriteItems(prev => prev.filter(item => item.id !== favoriteId));
+      }
+    } catch (error) {
+      console.error('Error removing from favorites:', error);
+    }
+  };
+
+  // Handle adding a bakugan to portfolio
+  const handleAddToPortfolio = async (bakuganId: string, quantity: number = 1) => {
+    if (!session?.user) return;
+
+    try {
+      const response = await fetch('/api/portfolio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bakuganId, quantity }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Add the bakugan to the local portfolio items state
+        setPortfolioItems(prev => [...prev, { 
+          id: data.portfolioItem.id, 
+          bakuganId,
+          quantity
+        }]);
+      }
+    } catch (error) {
+      console.error('Error adding to portfolio:', error);
+    }
+  };
+
+  // Handle removing a bakugan from portfolio
+  const handleRemoveFromPortfolio = async (portfolioId: string) => {
     if (!session?.user) return;
 
     try {
@@ -96,10 +165,10 @@ function BakumaniaContent() {
 
       if (response.ok) {
         // Remove the bakugan from the local portfolio items state
-        setPortfolioItems(prev => prev.filter(id => id !== portfolioId));
+        setPortfolioItems(prev => prev.filter(item => item.id !== portfolioId));
       }
     } catch (error) {
-      console.error('Error removing from favorites:', error);
+      console.error('Error removing from portfolio:', error);
     }
   };
 
@@ -149,12 +218,16 @@ function BakumaniaContent() {
         priceHistories={priceHistories}
         pagination={pagination}
         isAdmin={!!user?.isAdmin}
+        favoriteItems={favoriteItems}
         portfolioItems={portfolioItems}
+        activeTab="main"
         onUpdatePrice={handleUpdatePrice}
         onUpdateDetails={handleUpdateDetails}
         onDeleteBakugan={handleDeleteBakugan}
         onAddToFavorite={handleAddToFavorite}
         onRemoveFromFavorite={handleRemoveFromFavorite}
+        onAddToPortfolio={handleAddToPortfolio}
+        onRemoveFromPortfolio={handleRemoveFromPortfolio}
       />
       
       {/* Pagination Controls */}
