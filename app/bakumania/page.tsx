@@ -194,14 +194,37 @@ function LoginPrompt() {
   );
 }
 
+// Loading component
+function LoadingPrompt() {
+  return (
+    <main className="relative max-w-6xl mx-auto px-4 py-16 sm:px-6 lg:px-8 xl:px-12">
+      {/* Header Section */}
+      <BakumaniaHeader />
+      
+      {/* Loading Prompt */}
+      <div className="bg-gradient-to-br from-blue-900/40 via-black/40 to-blue-900/40 backdrop-blur-md rounded-2xl p-8 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)] text-center">
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 // Export the component
 export default function BakumaniaPage() {
   const { data: session, status } = useSession();
   
+  // Show loading prompt during initial load
+  if (status === 'loading') {
+    return <LoadingPrompt />;
+  }
+  
   // Show login prompt if user is not authenticated
-  if (status !== 'loading' && !session) {
+  if (!session) {
     return <LoginPrompt />;
   }
   
+  // Only show content if user is authenticated
   return <BakumaniaContent />;
 }
