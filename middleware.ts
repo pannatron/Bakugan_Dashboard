@@ -43,5 +43,10 @@ export const config = {
     '/bakumania',
     '/bakumania/:path*',
     '/auth/:path*',
+    '/api/bakugan/:path*',
+    '/api/bakugan',
+    '/api/price-history/:path*',
+    '/api/recommendations',
+    '/api/bakutech-recommendations',
   ],
 };
