@@ -20,7 +20,7 @@ const RecommendationSchema = new Schema<IRecommendation>(
       required: true,
       min: 1,
       max: 5,
-      unique: true,
+      unique: true, // This creates an index automatically
     },
     reason: {
       type: String,
@@ -34,7 +34,7 @@ const RecommendationSchema = new Schema<IRecommendation>(
 );
 
 // Create indexes
-RecommendationSchema.index({ rank: 1 }, { unique: true });
+// Rank index is already created by the schema definition with unique: true
 RecommendationSchema.index({ bakuganId: 1 }, { unique: true });
 
 const Recommendation = mongoose.models.Recommendation || mongoose.model<IRecommendation>('Recommendation', RecommendationSchema);

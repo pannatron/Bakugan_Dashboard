@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '../components/AuthProvider';
+import { useSession } from 'next-auth/react';
 import { useBakuganData } from '../hooks/useBakuganData';
 import BakumaniaHeader from '../components/BakumaniaHeader';
 import BakuganFilters from '../components/BakuganFilters';
@@ -11,7 +11,8 @@ import BakuganPagination from '../components/BakuganPagination';
 import Link from 'next/link';
 
 function BakumaniaContent() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   
   const {

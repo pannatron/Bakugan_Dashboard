@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useAuth } from './AuthProvider';
+import { useSession } from 'next-auth/react';
 
 interface PricePoint {
   price: number;
@@ -45,7 +45,8 @@ const getMostRecentPrice = (bakugan: Bakugan): number => {
 };
 
 const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

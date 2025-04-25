@@ -20,7 +20,7 @@ const BakutechRecommendationSchema = new Schema<IBakutechRecommendation>(
       required: true,
       min: 1,
       max: 5,
-      unique: true,
+      unique: true, // This creates an index automatically
     },
     reason: {
       type: String,
@@ -34,7 +34,7 @@ const BakutechRecommendationSchema = new Schema<IBakutechRecommendation>(
 );
 
 // Create indexes
-BakutechRecommendationSchema.index({ rank: 1 }, { unique: true });
+// Rank index is already created by the schema definition with unique: true
 BakutechRecommendationSchema.index({ bakuganId: 1 }, { unique: true });
 
 const BakutechRecommendation = mongoose.models.BakutechRecommendation || mongoose.model<IBakutechRecommendation>('BakutechRecommendation', BakutechRecommendationSchema);

@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from './AuthProvider';
+import { useSession, signOut } from 'next-auth/react';
 
 const Navigation = () => {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -67,6 +68,36 @@ const Navigation = () => {
                 Admin
               </Link>
             )}
+            
+            {/* Auth buttons */}
+            <div className="ml-4">
+              {user ? (
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-gray-300">
+                    <span className="font-medium text-blue-400">{user.name}</span>
+                    {user.isAdmin && (
+                      <span className="ml-2 px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-full text-xs">
+                        Admin
+                      </span>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                    className="px-4 py-2 rounded-xl bg-gray-700 text-white text-sm font-medium hover:bg-gray-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/auth/signin"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-medium hover:from-blue-500 hover:to-blue-400 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
           </div>
           
           {/* Mobile menu button */}
@@ -127,6 +158,37 @@ const Navigation = () => {
                 Admin
               </Link>
             )}
+            
+            {/* Mobile auth buttons */}
+            <div className="mt-2 pt-2 border-t border-gray-700">
+              {user ? (
+                <>
+                  <div className="px-3 py-2 text-sm text-gray-300">
+                    <span className="font-medium text-blue-400">{user.name}</span>
+                    {user.isAdmin && (
+                      <span className="ml-2 px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-full text-xs">
+                        Admin
+                      </span>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                    className="w-full text-left px-3 py-2 text-base font-medium text-gray-300 hover:text-red-300 hover:bg-gray-800"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/auth/signin"
+                  className="block px-3 py-2 text-base font-medium text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+                  onClick={closeMenu}
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>

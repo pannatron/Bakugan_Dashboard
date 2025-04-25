@@ -4,6 +4,9 @@ import { verify } from 'jsonwebtoken';
 import connectDB from '@/app/lib/mongodb';
 import User from '@/app/lib/models/User';
 
+// Mark this route as dynamic to handle cookies
+export const dynamic = 'force-dynamic';
+
 // GET /api/auth/me - Get current user info
 export async function GET(request: NextRequest) {
   try {

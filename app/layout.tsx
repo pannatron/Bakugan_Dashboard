@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { NextAuthProvider } from './components/NextAuthProvider';
 import { AuthProvider } from './components/AuthProvider';
 import Navigation from './components/Navigation';
 
@@ -19,8 +20,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AuthProvider>
-          <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#0f1318] to-[#0a0a0a] relative overflow-hidden">
+        <NextAuthProvider>
+          <AuthProvider>
+            <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#0f1318] to-[#0a0a0a] relative overflow-hidden">
             {/* Animated background elements */}
             <div className="absolute inset-0">
               <div className="absolute top-0 -right-40 w-96 h-96 bg-blue-600/30 rounded-full blur-[100px] animate-float opacity-70 mix-blend-screen"></div>
@@ -34,8 +36,9 @@ export default function RootLayout({
             <div className="relative z-10">
               {children}
             </div>
-          </div>
-        </AuthProvider>
+            </div>
+          </AuthProvider>
+        </NextAuthProvider>
       </body>
     </html>
   );

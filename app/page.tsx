@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import RecommendedBakugan from './components/RecommendedBakugan';
 import BakutechRecommendedBakugan from './components/BakutechRecommendedBakugan';
-import { useAuth } from './components/AuthProvider';
 import Link from 'next/link';
 
 function HomeContent() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
   const [showBakutech, setShowBakutech] = useState(true);
 
   const toggleDisplay = () => {
