@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthProvider';
+import { useSession, signIn } from 'next-auth/react';
 import { BakuganCardProps, PriceTrend } from './types';
 import BakuganInfo from './BakuganInfo';
 import PriceDisplay from './PriceDisplay';
@@ -10,6 +11,7 @@ import PriceUpdateForm from './PriceUpdateForm';
 import BakuganEditForm from './BakuganEditForm';
 import PriceHistoryChart from './PriceHistoryChart';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const BakuganCard = ({
   id,
@@ -22,12 +24,16 @@ const BakuganCard = ({
   currentPrice,
   referenceUri,
   priceHistory,
+  isInPortfolio,
   onUpdatePrice,
   onUpdateDetails,
   onDeleteBakugan,
+  onAddToFavorite,
+  onRemoveFromFavorite,
 }: BakuganCardProps) => {
   const router = useRouter();
   const { user } = useAuth();
+  const { data: session } = useSession();
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [isChartLoading, setIsChartLoading] = useState(true);
@@ -107,17 +113,49 @@ const BakuganCard = ({
             priceTrend={priceTrend}
           />
           
-          {/* Admin buttons */}
-          {user?.isAdmin && (
-            <AdminButtons
-              showUpdateForm={showUpdateForm}
-              showEditForm={showEditForm}
-              setShowUpdateForm={setShowUpdateForm}
-              setShowEditForm={setShowEditForm}
-              hasUpdateDetails={!!onUpdateDetails}
-              onDelete={onDeleteBakugan ? () => onDeleteBakugan(id) : undefined}
-            />
-          )}
+          {/* Admin buttons and Favorite button */}
+          <div className="flex flex-col gap-2">
+            {user?.isAdmin && (
+              <AdminButtons
+                showUpdateForm={showUpdateForm}
+                showEditForm={showEditForm}
+                setShowUpdateForm={setShowUpdateForm}
+                setShowEditForm={setShowEditForm}
+                hasUpdateDetails={!!onUpdateDetails}
+                onDelete={onDeleteBakugan ? () => onDeleteBakugan(id) : undefined}
+              />
+            )}
+            
+            {/* Favorite Button */}
+            {isInPortfolio ? (
+              <button
+                onClick={() => onRemoveFromFavorite && onRemoveFromFavorite(id)}
+                className="w-full px-4 py-2 rounded-lg bg-red-600/30 text-red-300 border border-red-600/30 hover:bg-red-600/50 transition-colors flex items-center justify-center gap-2"
+                disabled={!session}
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                </svg>
+                Remove from Favorites
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  if (session) {
+                    onAddToFavorite && onAddToFavorite(id);
+                  } else {
+                    signIn();
+                  }
+                }}
+                className="w-full px-4 py-2 rounded-lg bg-blue-600/30 text-blue-300 border border-blue-600/30 hover:bg-blue-600/50 transition-colors flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                {session ? 'Add to Favorites' : 'Login to Add to Favorites'}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Right Column: Chart, Update Form, and Edit Form */}

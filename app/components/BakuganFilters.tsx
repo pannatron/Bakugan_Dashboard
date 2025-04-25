@@ -1,7 +1,9 @@
 'use client';
 
 import { useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import { elements, seriesOptions } from '../types/bakugan';
+import Link from 'next/link';
 
 interface BakuganFiltersProps {
   nameFilter: string;
@@ -47,6 +49,27 @@ export default function BakuganFilters({
   onFocusNameFilter
 }: BakuganFiltersProps) {
   const suggestionRef = useRef<HTMLDivElement>(null);
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user;
+
+  // If user is not authenticated, don't render the filter component at all
+  if (!isAuthenticated) {
+    return (
+      <div className="w-full mb-8 bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold text-blue-300">Bakugan Collection</h2>
+          <div className="text-sm text-yellow-300 flex items-center gap-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <Link href="/auth/signin" className="hover:underline">
+              Login to unlock filters
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full mb-8 bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50">

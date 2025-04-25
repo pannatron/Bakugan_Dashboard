@@ -56,6 +56,18 @@ const Navigation = () => {
             >
               Bakugan List
             </Link>
+            {user && (
+              <Link 
+                href="/portfolio" 
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  pathname.includes('/portfolio') 
+                    ? 'text-green-300 bg-green-900/20' 
+                    : 'text-gray-300 hover:text-green-300 hover:bg-gray-800'
+                }`}
+              >
+                My Portfolio
+              </Link>
+            )}
             {user?.isAdmin && (
               <Link 
                 href="/admin" 
@@ -145,6 +157,19 @@ const Navigation = () => {
             >
               Bakugan List
             </Link>
+            {user && (
+              <Link 
+                href="/portfolio" 
+                className={`block px-3 py-2 rounded-md text-base font-medium ${
+                  pathname.includes('/portfolio') 
+                    ? 'text-green-300 bg-green-900/20' 
+                    : 'text-gray-300 hover:text-green-300 hover:bg-gray-800'
+                }`}
+                onClick={closeMenu}
+              >
+                My Portfolio
+              </Link>
+            )}
             {user?.isAdmin && (
               <Link 
                 href="/admin" 

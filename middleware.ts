@@ -9,17 +9,22 @@ export async function middleware(request: NextRequest) {
   const isPublicPath = path === '/' || 
                        path === '/auth/signin' || 
                        path === '/auth/profile-setup' ||
-                       path.startsWith('/api/auth');
+                       path.startsWith('/api/auth') ||
+                       path === '/bakumania' || // Allow public access to main Bakumania page
+                       (path.startsWith('/api/bakugan') && !path.includes('/admin')) || // Allow public access to bakugan API
+                       path === '/api/recommendations' || // Allow public access to recommendations API
+                       path === '/api/bakutech-recommendations'; // Allow public access to bakutech recommendations API
   
-  // Check if the path is for the Bakugan list page
-  const isBakuganListPath = path === '/bakumania' || path.startsWith('/bakumania/');
+  // Check if the path is for admin sections or portfolio
+  const isAdminPath = path.includes('/admin');
+  const isPortfolioPath = path === '/portfolio';
   
   // If it's a public path, allow access
   if (isPublicPath) {
     return NextResponse.next();
   }
   
-  // For all other paths including Bakugan list, check authentication
+  // For all other paths, check authentication
   const token = await getToken({ 
     req: request,
     secret: process.env.NEXTAUTH_SECRET
@@ -42,11 +47,13 @@ export const config = {
     '/',
     '/bakumania',
     '/bakumania/:path*',
+    '/portfolio',
     '/auth/:path*',
     '/api/bakugan/:path*',
     '/api/bakugan',
     '/api/price-history/:path*',
     '/api/recommendations',
     '/api/bakutech-recommendations',
+    '/api/portfolio/:path*',
   ],
 };

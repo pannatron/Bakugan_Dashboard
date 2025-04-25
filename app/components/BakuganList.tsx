@@ -3,6 +3,7 @@
 import { Bakugan, PricePoint, elements } from '../types/bakugan';
 import BakuganCard from './BakuganCard';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 
 interface BakuganListProps {
   filteredItems: Bakugan[];
@@ -14,6 +15,7 @@ interface BakuganListProps {
     limit: number;
   };
   isAdmin: boolean;
+  portfolioItems?: string[]; // Array of bakugan IDs in the user's portfolio
   onUpdatePrice: (
     bakuganId: string,
     price: number,
@@ -32,6 +34,8 @@ interface BakuganListProps {
     referenceUri: string
   ) => Promise<boolean>;
   onDeleteBakugan?: (bakuganId: string) => void;
+  onAddToFavorite?: (bakuganId: string) => void;
+  onRemoveFromFavorite?: (portfolioId: string) => void;
 }
 
 export default function BakuganList({
@@ -42,10 +46,14 @@ export default function BakuganList({
   priceHistories,
   pagination,
   isAdmin,
+  portfolioItems = [],
   onUpdatePrice,
   onUpdateDetails,
-  onDeleteBakugan
+  onDeleteBakugan,
+  onAddToFavorite,
+  onRemoveFromFavorite
 }: BakuganListProps) {
+  const { data: session } = useSession();
   return (
     <div className="relative">
       {/* Admin Link - Only for admins */}
@@ -157,9 +165,12 @@ export default function BakuganList({
                     currentPrice={bakugan.currentPrice}
                     referenceUri={bakugan.referenceUri}
                     priceHistory={priceHistories[bakugan._id] || []}
+                    isInPortfolio={portfolioItems.includes(bakugan._id)}
                     onUpdatePrice={onUpdatePrice}
                     onUpdateDetails={isAdmin ? onUpdateDetails : undefined}
                     onDeleteBakugan={isAdmin ? onDeleteBakugan : undefined}
+                    onAddToFavorite={onAddToFavorite}
+                    onRemoveFromFavorite={onRemoveFromFavorite}
                   />
                 </div>
               ))
