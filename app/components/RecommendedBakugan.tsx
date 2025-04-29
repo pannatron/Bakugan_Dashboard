@@ -402,10 +402,19 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
                       hoveredIndex === index ? 'animate-pulse-slow opacity-20' : ''
                     }`}></div>
                     
-                    {/* Bakugan Image */}
+                    {/* Bakugan Image with Smooth Loading */}
                     <div className="absolute inset-0 w-full h-full">
                       {recommendation.bakuganId.imageUrl ? (
                         <div className="relative w-full h-full">
+                          {/* Placeholder/Skeleton while loading */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-blue-600/20 animate-pulse">
+                            <div className="w-full h-full flex items-center justify-center">
+                              <span className="text-blue-300 text-5xl font-bold opacity-30">
+                                {recommendation.bakuganId.names[0].charAt(0)}
+                              </span>
+                            </div>
+                          </div>
+                          
                           <Image
                             src={recommendation.bakuganId.imageUrl}
                             alt={recommendation.bakuganId.names[0]}
@@ -413,8 +422,26 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
                             sizes="(max-width: 768px) 100vw, 300px"
                             priority={index < 2} // Load the first two images with priority
                             loading={index < 2 ? "eager" : "lazy"}
-                            className="object-cover"
+                            className="object-cover transition-opacity duration-300"
                             style={{ objectFit: 'cover' }}
+                            onLoadingComplete={(image) => {
+                              // Fade in the image once it's loaded
+                              image.classList.remove('opacity-0');
+                            }}
+                            onLoad={(event) => {
+                              // Ensure the image is visible after load
+                              const target = event.target as HTMLImageElement;
+                              if (target) {
+                                target.style.opacity = '1';
+                              }
+                            }}
+                            // Start with opacity 0 and transition to full opacity when loaded
+                            onLoadStart={(event) => {
+                              const target = event.target as HTMLImageElement;
+                              if (target) {
+                                target.style.opacity = '0';
+                              }
+                            }}
                           />
                         </div>
                       ) : (
