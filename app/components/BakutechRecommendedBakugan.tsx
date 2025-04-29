@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 
 interface PricePoint {
@@ -403,11 +404,18 @@ const BakutechRecommendedBakugan = ({ onToggle }: BakutechRecommendedBakuganProp
                     {/* Bakugan Image */}
                     <div className="absolute inset-0 w-full h-full">
                       {recommendation.bakuganId.imageUrl ? (
-                        <img
-                          src={recommendation.bakuganId.imageUrl}
-                          alt={recommendation.bakuganId.names[0]}
-                          className="w-full h-full object-cover"
-                        />
+                        <div className="relative w-full h-full">
+                          <Image
+                            src={recommendation.bakuganId.imageUrl}
+                            alt={recommendation.bakuganId.names[0]}
+                            fill
+                            sizes="(max-width: 768px) 100vw, 300px"
+                            priority={index < 2} // Load the first two images with priority
+                            loading={index < 2 ? "eager" : "lazy"}
+                            className="object-cover"
+                            style={{ objectFit: 'cover' }}
+                          />
+                        </div>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900/40 to-blue-600/20">
                           <span className="text-blue-300 text-5xl font-bold">

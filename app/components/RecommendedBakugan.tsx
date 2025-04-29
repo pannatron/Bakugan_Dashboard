@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 
 interface PricePoint {
@@ -404,11 +405,18 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
                     {/* Bakugan Image */}
                     <div className="absolute inset-0 w-full h-full">
                       {recommendation.bakuganId.imageUrl ? (
-                        <img
-                          src={recommendation.bakuganId.imageUrl}
-                          alt={recommendation.bakuganId.names[0]}
-                          className="w-full h-full object-cover"
-                        />
+                        <div className="relative w-full h-full">
+                          <Image
+                            src={recommendation.bakuganId.imageUrl}
+                            alt={recommendation.bakuganId.names[0]}
+                            fill
+                            sizes="(max-width: 768px) 100vw, 300px"
+                            priority={index < 2} // Load the first two images with priority
+                            loading={index < 2 ? "eager" : "lazy"}
+                            className="object-cover"
+                            style={{ objectFit: 'cover' }}
+                          />
+                        </div>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900/40 to-blue-600/20">
                           <span className="text-blue-300 text-5xl font-bold">
@@ -476,11 +484,14 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
             onClick={toggleExpanded}
             className="transition-all duration-300 hover:scale-105 active:scale-[0.98]"
           >
-            <div className="relative">
-              <img 
+            <div className="relative w-32 h-32">
+              <Image 
                 src="/element/switch_2_baku_tech1.webp" 
                 alt="BakuTech" 
-                className="w-32 h-32 object-contain"
+                fill
+                sizes="128px"
+                priority
+                className="object-contain"
               />
             </div>
           </button>
