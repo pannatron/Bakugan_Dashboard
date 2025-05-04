@@ -27,6 +27,7 @@ function BakumaniaContent() {
     showSuggestions,
     isTransitioning,
     priceHistories,
+    regularItemsLoading,
     setSelectedBakugan,
     updateFilter,
     resetFilters,
@@ -221,6 +222,7 @@ function BakumaniaContent() {
         favoriteItems={favoriteItems}
         portfolioItems={portfolioItems}
         activeTab="main"
+        regularItemsLoading={regularItemsLoading}
         onUpdatePrice={handleUpdatePrice}
         onUpdateDetails={handleUpdateDetails}
         onDeleteBakugan={handleDeleteBakugan}

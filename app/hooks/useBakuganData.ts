@@ -15,6 +15,7 @@ interface Cache {
 interface UseBakuganDataProps {
   initialPage?: number;
   initialLimit?: number;
+  prioritizeBakutech?: boolean;
 }
 
 interface FilterState {
@@ -27,7 +28,7 @@ interface FilterState {
   filterMode: 'all' | 'bakugan' | 'bakutech' | 'battle-brawlers' | 'new-vestroia' | 'gundalian-invaders' | 'mechtanium-surge';
 }
 
-export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakuganDataProps = {}) {
+export function useBakuganData({ initialPage = 1, initialLimit = 5, prioritizeBakutech = true }: UseBakuganDataProps = {}) {
   // State for the main component
   const [bakuganItems, setBakuganItems] = useState<Bakugan[]>([]);
   const [filteredItems, setFilteredItems] = useState<Bakugan[]>([]);
@@ -36,6 +37,8 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
   const [selectedBakugan, setSelectedBakugan] = useState<string | null>(null);
   const [priceHistories, setPriceHistories] = useState<Record<string, PricePoint[]>>({});
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [bakutechItemsLoaded, setBakutechItemsLoaded] = useState(false);
+  const [regularItemsLoading, setRegularItemsLoading] = useState(false);
   
   // Use a ref to track if a fetch is in progress to prevent double fetching
   const isFetchingRef = useRef(false);
@@ -138,7 +141,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
   }, []);
 
   // Fetch Bakugan items with server-side pagination and filtering
-  const fetchBakuganItems = useCallback(async () => {
+  const fetchBakuganItems = useCallback(async (forceFetchAll = false) => {
     // Prevent double fetching
     if (isFetchingRef.current) {
       return;
@@ -147,7 +150,13 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
     isFetchingRef.current = true;
     
     try {
-      setLoading(true);
+      // Only set loading to true if we're not already displaying Bakutech items
+      if (!bakutechItemsLoaded || forceFetchAll) {
+        setLoading(true);
+      } else if (filters.filterMode === 'all') {
+        // If we're loading regular items after Bakutech, show a different loading state
+        setRegularItemsLoading(true);
+      }
       
       const params = new URLSearchParams();
       
@@ -157,7 +166,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
       if (filters.elementFilter) params.append('element', filters.elementFilter);
       
       // Handle filter modes
-      if (filters.filterMode === 'bakutech') {
+      if (filters.filterMode === 'bakutech' || (prioritizeBakutech && !bakutechItemsLoaded && filters.filterMode === 'all' && !forceFetchAll)) {
         params.append('bakutech', 'true');
       } else if (filters.filterMode === 'bakugan') {
         params.append('excludeSize', 'B3');
@@ -173,6 +182,9 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
       } else if (filters.filterMode === 'mechtanium-surge') {
         params.append('excludeSize', 'B3');
         params.append('series', 'Mechtanium Surge Vol.4');
+      } else if (prioritizeBakutech && bakutechItemsLoaded && filters.filterMode === 'all') {
+        // When loading regular items after Bakutech in 'all' mode
+        params.append('excludeSize', 'B3');
       }
       
       // Add price filters if needed
@@ -193,10 +205,37 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
       
       if (cachedData) {
         console.log("Using cached data for:", url);
-        setFilteredItems(cachedData.items);
+        
+        if (prioritizeBakutech && filters.filterMode === 'all' && !forceFetchAll) {
+          if (!bakutechItemsLoaded) {
+            // First load - just Bakutech items
+            setFilteredItems(cachedData.items);
+            setBakutechItemsLoaded(true);
+            
+            // Immediately trigger loading of regular items
+            setTimeout(() => {
+              fetchBakuganItems(true);
+            }, 100);
+          } else {
+            // Second load - append regular items to Bakutech items
+            setFilteredItems(prev => {
+              // Create a map of existing IDs to avoid duplicates
+              const existingIds = new Set(prev.map(item => item._id));
+              // Filter out any duplicates from the new items
+              const newItems = cachedData.items.filter((item: Bakugan) => !existingIds.has(item._id));
+              return [...prev, ...newItems];
+            });
+          }
+        } else {
+          // Normal mode - replace all items
+          setFilteredItems(cachedData.items);
+          setBakutechItemsLoaded(false);
+        }
+        
         setPagination(cachedData.pagination);
         setError(null);
         setLoading(false);
+        setRegularItemsLoading(false);
         isFetchingRef.current = false;
         return;
       }
@@ -213,8 +252,32 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
       // Store in cache
       setCachedData(cacheKey, data);
       
-      // Set filtered items directly from API response
-      setFilteredItems(data.items || []);
+      // Handle the prioritized loading logic
+      if (prioritizeBakutech && filters.filterMode === 'all' && !forceFetchAll) {
+        if (!bakutechItemsLoaded) {
+          // First load - just Bakutech items
+          setFilteredItems(data.items || []);
+          setBakutechItemsLoaded(true);
+          
+          // Immediately trigger loading of regular items
+          setTimeout(() => {
+            fetchBakuganItems(true);
+          }, 100);
+        } else {
+          // Second load - append regular items to Bakutech items
+          setFilteredItems(prev => {
+            // Create a map of existing IDs to avoid duplicates
+            const existingIds = new Set(prev.map(item => item._id));
+            // Filter out any duplicates from the new items
+            const newItems = (data.items || []).filter((item: Bakugan) => !existingIds.has(item._id));
+            return [...prev, ...newItems];
+          });
+        }
+      } else {
+        // Normal mode - replace all items
+        setFilteredItems(data.items || []);
+        setBakutechItemsLoaded(false);
+      }
       
       // Update pagination from server response
       if (data.pagination) {
@@ -241,6 +304,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
       setError(err.message || 'Failed to fetch Bakugan items');
     } finally {
       setLoading(false);
+      setRegularItemsLoading(false);
       isFetchingRef.current = false;
       
       // Add a shorter delay before resetting the transitioning state
@@ -249,7 +313,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
         setIsTransitioning(false);
       }, 300);
     }
-  }, [filters, pagination, getCachedData, setCachedData]);
+  }, [filters, pagination, getCachedData, setCachedData, bakutechItemsLoaded, prioritizeBakutech]);
 
   // Fetch name suggestions
   const fetchNameSuggestions = useCallback(async (query: string) => {
@@ -532,9 +596,14 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
   
   // Apply server-side filters when filter values change or pagination changes
   useEffect(() => {
+    // Reset bakutechItemsLoaded when filter mode changes
+    if (filters.filterMode !== 'all') {
+      setBakutechItemsLoaded(false);
+    }
+    
     // Use a debounce to prevent rapid fetching
     const timeoutId = setTimeout(() => {
-      fetchBakuganItems();
+      fetchBakuganItems(false);
     }, 500);
     
     return () => clearTimeout(timeoutId);
@@ -698,6 +767,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
     priceHistories,
     uniqueElements,
     uniqueSpecialProperties,
+    regularItemsLoading,
     
     // Actions
     setSelectedBakugan,

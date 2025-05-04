@@ -18,6 +18,7 @@ interface BakuganListProps {
   favoriteItems?: { id: string; bakuganId: string }[]; // Array of favorite items with IDs
   portfolioItems?: { id: string; bakuganId: string; quantity?: number }[]; // Array of portfolio items with IDs and quantities
   activeTab?: 'portfolio' | 'favorites' | 'main';
+  regularItemsLoading?: boolean; // New prop to indicate if regular items are loading after Bakutech
   onUpdatePrice: (
     bakuganId: string,
     price: number,
@@ -55,6 +56,7 @@ export default function BakuganList({
   favoriteItems = [],
   portfolioItems = [],
   activeTab = 'main',
+  regularItemsLoading = false,
   onUpdatePrice,
   onUpdateDetails,
   onDeleteBakugan,
@@ -141,6 +143,13 @@ export default function BakuganList({
               loading || isTransitioning ? 'hidden' : 'block'
             }`}
           >
+            {/* Loading indicator for regular items (appears at the bottom when Bakutech items are already loaded) */}
+            {regularItemsLoading && (
+              <div className="flex justify-center items-center py-6 mt-8 bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-4 border border-gray-800/50">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mr-3"></div>
+                <p className="text-blue-300">Loading more items...</p>
+              </div>
+            )}
             {filteredItems.length === 0 && !loading ? (
               <div className="text-center py-12">
                 <p className="text-gray-400 text-lg">
