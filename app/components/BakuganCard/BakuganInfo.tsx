@@ -28,7 +28,10 @@ interface BakuganInfoProps {
   specialProperties: string;
   series?: string;
   imageUrl: string;
+  difficultyOfObtaining?: number;
 }
+
+// Difficulty stars rendering moved to BakuganCard component
 
 const BakuganInfo = ({
   names,
@@ -37,6 +40,7 @@ const BakuganInfo = ({
   specialProperties,
   series,
   imageUrl,
+  difficultyOfObtaining = 5,
 }: BakuganInfoProps) => {
   return (
     <div>
@@ -109,6 +113,8 @@ const BakuganInfo = ({
           <p className="text-sm text-purple-300">{specialProperties}</p>
         </div>
       )}
+      
+      {/* Difficulty of Obtaining removed from here and moved to BakuganCard */}
     </div>
   );
 };

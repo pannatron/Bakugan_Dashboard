@@ -8,7 +8,8 @@ interface PriceUpdateFormProps {
   initialNotes?: string;
   initialReferenceUri?: string;
   initialDate?: string;
-  onUpdatePrice: (id: string, price: number, notes: string, referenceUri: string, date: string) => Promise<void | boolean> | void;
+  initialDifficultyOfObtaining?: number;
+  onUpdatePrice: (id: string, price: number, notes: string, referenceUri: string, date: string, difficultyOfObtaining?: number) => Promise<void | boolean> | void;
   onCancel: () => void;
 }
 
@@ -18,6 +19,7 @@ const PriceUpdateForm = ({
   initialNotes = '', 
   initialReferenceUri = '', 
   initialDate = new Date().toISOString().split('T')[0],
+  initialDifficultyOfObtaining = 5,
   onUpdatePrice, 
   onCancel 
 }: PriceUpdateFormProps) => {
@@ -25,6 +27,7 @@ const PriceUpdateForm = ({
   const [notes, setNotes] = useState(initialNotes);
   const [newReferenceUri, setNewReferenceUri] = useState(initialReferenceUri);
   const [updateDate, setUpdateDate] = useState(initialDate);
+  const [difficultyOfObtaining, setDifficultyOfObtaining] = useState(initialDifficultyOfObtaining);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePriceSubmit = async (e: React.FormEvent) => {
@@ -33,7 +36,7 @@ const PriceUpdateForm = ({
     if (!isNaN(priceValue) && priceValue > 0) {
       try {
         setIsSubmitting(true);
-        await onUpdatePrice(id, priceValue, notes, newReferenceUri, updateDate);
+        await onUpdatePrice(id, priceValue, notes, newReferenceUri, updateDate, difficultyOfObtaining);
         setNewPrice('');
         setNotes('');
         setNewReferenceUri('');
@@ -106,6 +109,39 @@ const PriceUpdateForm = ({
             className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
             placeholder="Add notes about this price update"
           ></textarea>
+        </div>
+        
+        {/* Difficulty of Obtaining */}
+        <div>
+          <label htmlFor="difficultyOfObtaining" className="block text-sm font-medium text-gray-300 mb-1">
+            Difficulty of Obtaining (1-10)
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              id="difficultyOfObtaining"
+              min="1"
+              max="10"
+              step="1"
+              value={difficultyOfObtaining}
+              onChange={(e) => setDifficultyOfObtaining(parseInt(e.target.value))}
+              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+            <span className="text-amber-300 font-medium min-w-[2.5rem] text-center">
+              {difficultyOfObtaining}/10
+            </span>
+          </div>
+          <div className="mt-2 flex justify-between">
+            {Array.from({ length: 10 }).map((_, index) => (
+              <span 
+                key={index} 
+                className={`text-sm cursor-pointer ${index < difficultyOfObtaining ? 'text-yellow-400' : 'text-gray-600'}`}
+                onClick={() => setDifficultyOfObtaining(index + 1)}
+              >
+                ★
+              </span>
+            ))}
+          </div>
         </div>
         
         <button

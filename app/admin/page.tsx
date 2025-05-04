@@ -131,8 +131,8 @@ function AdminContent() {
   };
 
   // Wrapper for handleUpdatePrice to update the selected price history
-  const handleUpdatePriceWrapper = async (id: string, price: number, notes: string, referenceUri: string, date: string) => {
-    const success = await handleUpdatePrice(id, price, notes, referenceUri, date);
+  const handleUpdatePriceWrapper = async (id: string, price: number, notes: string, referenceUri: string, date: string, difficultyOfObtaining?: number) => {
+    const success = await handleUpdatePrice(id, price, notes, referenceUri, date, difficultyOfObtaining);
     if (success && bakuganToEdit && bakuganToEdit._id === id) {
       // Update the selected price history with the updated price history after a delay
       // to ensure the server has time to process the update
@@ -178,7 +178,8 @@ function AdminContent() {
     imageUrl: string,
     currentPrice: number,
     referenceUri: string,
-    date: string
+    date: string,
+    difficultyOfObtaining?: number
   ) => {
     try {
       const response = await fetch('/api/bakugan', {
@@ -196,6 +197,7 @@ function AdminContent() {
           currentPrice,
           referenceUri,
           date, // Include the date field in the request body
+          difficultyOfObtaining, // Include the difficultyOfObtaining field
         }),
       });
 
@@ -634,6 +636,7 @@ function AdminContent() {
               initialSeries={bakuganToEdit.series || ''}
               initialImageUrl={bakuganToEdit.imageUrl || ''}
               initialReferenceUri={bakuganToEdit.referenceUri || ''}
+              initialDifficultyOfObtaining={priceHistories[bakuganToEdit._id]?.[0]?.difficultyOfObtaining || 5}
               onUpdateDetails={handleUpdateDetails}
               onCancel={handleCancelEdit}
             />

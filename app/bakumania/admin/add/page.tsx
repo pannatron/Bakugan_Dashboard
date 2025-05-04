@@ -43,7 +43,8 @@ function AdminContent() {
     imageUrl: string,
     currentPrice: number,
     referenceUri: string,
-    date: string
+    date: string,
+    difficultyOfObtaining?: number
   ) => {
     try {
       console.log('Admin page adding with date:', date);
@@ -60,6 +61,7 @@ function AdminContent() {
         currentPrice,
         referenceUri,
         date: date, // Always use the provided date
+        difficultyOfObtaining, // Add the difficulty of obtaining field
       };
       
       console.log('Request body before JSON.stringify:', requestBody);

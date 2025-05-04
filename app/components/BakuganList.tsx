@@ -33,7 +33,8 @@ interface BakuganListProps {
     specialProperties: string,
     series: string,
     imageUrl: string,
-    referenceUri: string
+    referenceUri: string,
+    difficultyOfObtaining: number
   ) => Promise<boolean>;
   onDeleteBakugan?: (bakuganId: string) => void;
   onAddToFavorite?: (bakuganId: string) => void;

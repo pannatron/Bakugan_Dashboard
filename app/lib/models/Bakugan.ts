@@ -10,6 +10,7 @@ export interface IBakugan extends Document {
   currentPrice: number;
   referenceUri: string; // URI for price reference
   date: Date | string; // Date of record
+  difficultyOfObtaining: number; // 1-10 scale indicating how difficult it is to obtain
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,6 +64,13 @@ const BakuganSchema = new Schema<IBakugan>(
     date: {
       type: Schema.Types.Mixed, // Allow both Date and String
       required: true, // Make it required to ensure we always have a date
+    },
+    difficultyOfObtaining: {
+      type: Number,
+      required: false,
+      default: 5,
+      min: 1,
+      max: 10,
     },
   },
   {

@@ -156,7 +156,8 @@ export async function POST(request: NextRequest) {
       imageUrl, 
       currentPrice,
       referenceUri,
-      date
+      date,
+      difficultyOfObtaining
     } = body;
 
     if (!names || !size || !element || currentPrice === undefined) {
@@ -196,6 +197,12 @@ if (existingBakugan) {
     existingBakugan.date = date;
   }
   
+  // Update difficulty of obtaining if provided
+  if (difficultyOfObtaining !== undefined) {
+    // Ensure it's between 1 and 10
+    existingBakugan.difficultyOfObtaining = Math.min(Math.max(Math.round(difficultyOfObtaining), 1), 10);
+  }
+  
   await existingBakugan.save();
 
   // Add to price history
@@ -208,6 +215,8 @@ if (existingBakugan) {
     timestamp: date, // Use the date directly as provided by the client
     notes: '', // Remove the "Price updated via Add form" note
     referenceUri: referenceUri || '',
+    difficultyOfObtaining: difficultyOfObtaining !== undefined ? 
+      Math.min(Math.max(Math.round(difficultyOfObtaining), 1), 10) : existingBakugan.difficultyOfObtaining || 5,
   });
 
   return NextResponse.json({
@@ -239,6 +248,8 @@ if (existingBakugan) {
       currentPrice,
       referenceUri: referenceUri || '',
       date: date, // Use the provided date directly
+      difficultyOfObtaining: difficultyOfObtaining !== undefined ? 
+        Math.min(Math.max(Math.round(difficultyOfObtaining), 1), 10) : 5, // Default to 5 if not provided
     });
 
     // Create initial price history entry for the new Bakugan
@@ -248,6 +259,8 @@ if (existingBakugan) {
       timestamp: date, // Use the date directly as provided by the client
       notes: 'Initial price',
       referenceUri: referenceUri || '',
+      difficultyOfObtaining: difficultyOfObtaining !== undefined ? 
+        Math.min(Math.max(Math.round(difficultyOfObtaining), 1), 10) : 5, // Default to 5 if not provided
     });
 
     return NextResponse.json(newBakugan, { status: 201 });

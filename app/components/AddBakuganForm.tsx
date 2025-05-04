@@ -23,6 +23,7 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
   const [referenceUri, setReferenceUri] = useState('');
   const [notes, setNotes] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [difficultyOfObtaining, setDifficultyOfObtaining] = useState(5);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [recommendations, setRecommendations] = useState<BakuganRecommendation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -252,7 +253,8 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
           imageUrl,
           priceValue,
           referenceUri,
-          formattedDate
+          formattedDate,
+          difficultyOfObtaining
         );
         
         // Reset form
@@ -271,6 +273,7 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
     setPrice('');
     setReferenceUri('');
     setNotes('');
+    setDifficultyOfObtaining(5);
     // Don't reset the date to keep the user's selected date
     // setDate(new Date().toISOString().split('T')[0]);
     setIsUpdateMode(false);
@@ -403,6 +406,8 @@ const AddBakuganForm = ({ onAddBakugan, onUpdateBakugan }: AddBakuganFormProps) 
               setReferenceUri={setReferenceUri}
               date={date}
               setDate={setDate}
+              difficultyOfObtaining={difficultyOfObtaining}
+              setDifficultyOfObtaining={setDifficultyOfObtaining}
             />
           </>
         ) : (

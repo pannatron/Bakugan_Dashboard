@@ -28,7 +28,8 @@ interface AdminBakuganListProps {
     specialProperties: string,
     series: string,
     imageUrl: string,
-    referenceUri: string
+    referenceUri: string,
+    difficultyOfObtaining: number
   ) => Promise<boolean>;
   onDeleteBakugan?: (bakuganId: string) => void;
 }

@@ -7,6 +7,7 @@ export interface IPriceHistory extends Document {
   timestamp: Date | string;
   notes: string;
   referenceUri: string; // URI for price reference
+  difficultyOfObtaining?: number; // 1-10 scale indicating how difficult it is to obtain
 }
 
 const PriceHistorySchema = new Schema<IPriceHistory>(
@@ -33,6 +34,13 @@ const PriceHistorySchema = new Schema<IPriceHistory>(
     referenceUri: {
       type: String,
       default: '',
+    },
+    difficultyOfObtaining: {
+      type: Number,
+      required: false,
+      default: 5,
+      min: 1,
+      max: 10,
     },
   },
   {

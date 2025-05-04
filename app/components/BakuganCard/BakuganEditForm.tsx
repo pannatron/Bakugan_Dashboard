@@ -12,6 +12,7 @@ interface BakuganEditFormProps {
   initialSeries?: string;
   initialImageUrl: string;
   initialReferenceUri: string;
+  initialDifficultyOfObtaining?: number;
   onUpdateDetails: (
     id: string,
     names: string[],
@@ -20,7 +21,8 @@ interface BakuganEditFormProps {
     specialProperties: string,
     series: string,
     imageUrl: string,
-    referenceUri: string
+    referenceUri: string,
+    difficultyOfObtaining: number
   ) => Promise<boolean>;
   onCancel: () => void;
 }
@@ -34,6 +36,7 @@ const BakuganEditForm = ({
   initialSeries = '',
   initialImageUrl,
   initialReferenceUri,
+  initialDifficultyOfObtaining = 5,
   onUpdateDetails,
   onCancel,
 }: BakuganEditFormProps) => {
@@ -44,6 +47,7 @@ const BakuganEditForm = ({
   const [editSeries, setEditSeries] = useState(initialSeries);
   const [editImageUrl, setEditImageUrl] = useState(initialImageUrl);
   const [editReferenceUri, setEditReferenceUri] = useState(initialReferenceUri);
+  const [editDifficultyOfObtaining, setEditDifficultyOfObtaining] = useState(initialDifficultyOfObtaining);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddName = () => {
@@ -78,7 +82,8 @@ const BakuganEditForm = ({
           editSpecialProperties,
           editSeries,
           editImageUrl,
-          editReferenceUri
+          editReferenceUri,
+          editDifficultyOfObtaining
         );
         
         if (success) {
@@ -264,6 +269,39 @@ const BakuganEditForm = ({
             className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
             placeholder="Enter reference URI"
           />
+        </div>
+
+        {/* Difficulty of Obtaining */}
+        <div>
+          <label htmlFor="editDifficultyOfObtaining" className="block text-sm font-medium text-gray-300 mb-1">
+            Difficulty of Obtaining (1-10)
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              id="editDifficultyOfObtaining"
+              min="1"
+              max="10"
+              step="1"
+              value={editDifficultyOfObtaining}
+              onChange={(e) => setEditDifficultyOfObtaining(parseInt(e.target.value))}
+              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+            <span className="text-amber-300 font-medium min-w-[2.5rem] text-center">
+              {editDifficultyOfObtaining}/10
+            </span>
+          </div>
+          <div className="mt-2 flex justify-between">
+            {Array.from({ length: 10 }).map((_, index) => (
+              <span 
+                key={index} 
+                className={`text-sm cursor-pointer ${index < editDifficultyOfObtaining ? 'text-yellow-400' : 'text-gray-600'}`}
+                onClick={() => setEditDifficultyOfObtaining(index + 1)}
+              >
+                ★
+              </span>
+            ))}
+          </div>
         </div>
 
         <button

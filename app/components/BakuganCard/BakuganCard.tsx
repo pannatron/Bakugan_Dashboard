@@ -110,6 +110,7 @@ const BakuganCard = ({
             specialProperties={specialProperties}
             series={series}
             imageUrl={imageUrl}
+            difficultyOfObtaining={priceHistory?.[0]?.difficultyOfObtaining}
           />
           
           <PriceDisplay
@@ -164,6 +165,92 @@ const BakuganCard = ({
               </button>
             )}
             
+            {/* Difficulty Stars - Increasing size and effects */}
+            <div className="mt-2 mb-2 relative">
+              <div className="flex justify-center items-center py-0">
+                {Array.from({ length: 10 }).map((_, index) => {
+                  // Calculate if star should be filled
+                  const difficultyValue = priceHistory?.[0]?.difficultyOfObtaining || 5;
+                  const isFilled = index < difficultyValue;
+                  
+                  // Calculate size (increasing from left to right)
+                  const size = 18 + (index * 0.8); // Increased base size from 14 to 18
+                  
+                  // Styling for filled stars with enhanced effects based on difficulty
+                  if (isFilled) {
+                    // Calculate effect intensity based on star position and total filled stars
+                    const effectIntensity = (index + 1) / difficultyValue;
+                    const rotationDeg = (index % 2 === 0) ? 2 : -2; // Very subtle alternate rotation
+                    
+                    // Pastel blue colors
+                    const pastelBlue1 = "rgb(138, 180, 248)"; // Light pastel blue
+                    const pastelBlue2 = "rgb(108, 156, 240)"; // Slightly darker pastel blue
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className="relative mx-0.5 transform hover:scale-110 transition-all duration-300"
+                        style={{
+                          transform: `rotate(${rotationDeg}deg)`,
+                          zIndex: index + 1, // Higher stars appear on top
+                          animation: `twinkle ${3 + Math.random() * 2}s infinite alternate ease-in-out`, // Subtle twinkling effect
+                        }}
+                      >
+                        {/* Star with pastel blue color and subtle twinkling */}
+                        <div 
+                          className="relative flex items-center justify-center"
+                          style={{ 
+                            fontSize: `${size}px`,
+                            filter: `drop-shadow(0px 0px ${1 + (effectIntensity * 0.5)}px rgba(138,180,248,${0.3}))`,
+                            // No pulse animation as requested
+                          }}
+                        >
+                          <span style={{ 
+                            backgroundImage: `linear-gradient(135deg, ${pastelBlue1}, ${pastelBlue2})`,
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            display: 'inline-block'
+                          }}>
+                            ★
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    // Empty stars with subtle styling
+                    return (
+                      <span 
+                        key={index} 
+                        className="text-gray-700 mx-0.5 opacity-10" // Reduced opacity further
+                        style={{ 
+                          fontSize: `${size}px`
+                        }}
+                      >
+                        ★
+                      </span>
+                    );
+                  }
+                })}
+              </div>
+              {/* Add keyframes for twinkling animation */}
+              <style jsx>{`
+                @keyframes twinkle {
+                  0% { opacity: 0.85; transform: scale(1); }
+                  100% { opacity: 1; transform: scale(1.05); }
+                }
+              `}</style>
+              
+              <div className="text-center mt-1">
+                <span className="text-xs font-medium" style={{ 
+                  backgroundImage: 'linear-gradient(135deg, rgb(138, 180, 248, 0.8), rgb(108, 156, 240, 0.8))',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}>
+                  Difficulty: {priceHistory?.[0]?.difficultyOfObtaining || 5}/10
+                </span>
+              </div>
+            </div>
+            
             {/* Portfolio Button - Only show in favorites view */}
             {activeTab === 'favorites' && (
               isInPortfolio ? (
@@ -203,22 +290,24 @@ const BakuganCard = ({
           {showUpdateForm && user?.isAdmin ? (
             <PriceUpdateForm
               id={id}
+              initialDifficultyOfObtaining={priceHistory?.[0]?.difficultyOfObtaining || 5}
               onUpdatePrice={onUpdatePrice}
               onCancel={() => setShowUpdateForm(false)}
             />
           ) : showEditForm && user?.isAdmin && onUpdateDetails ? (
-            <BakuganEditForm
-              id={id}
-              initialNames={names}
-              initialSize={size}
-              initialElement={element}
-              initialSpecialProperties={specialProperties}
-              initialSeries={series}
-              initialImageUrl={imageUrl}
-              initialReferenceUri={referenceUri}
-              onUpdateDetails={onUpdateDetails}
-              onCancel={() => setShowEditForm(false)}
-            />
+          <BakuganEditForm
+            id={id}
+            initialNames={names}
+            initialSize={size}
+            initialElement={element}
+            initialSpecialProperties={specialProperties}
+            initialSeries={series}
+            initialImageUrl={imageUrl}
+            initialReferenceUri={referenceUri}
+            initialDifficultyOfObtaining={priceHistory?.[0]?.difficultyOfObtaining || 5}
+            onUpdateDetails={onUpdateDetails}
+            onCancel={() => setShowEditForm(false)}
+          />
           ) : (
             <PriceHistoryChart
               priceHistory={priceHistory}

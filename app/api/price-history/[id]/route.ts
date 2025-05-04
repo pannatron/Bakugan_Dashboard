@@ -50,7 +50,7 @@ export async function DELETE(
 
     // Get the updated price history for this Bakugan
     const updatedPriceHistory = await PriceHistory.find({ bakuganId })
-      .select('_id price timestamp notes referenceUri')
+      .select('_id price timestamp notes referenceUri difficultyOfObtaining')
       .sort({ timestamp: -1, _id: -1 })
       .lean();
 

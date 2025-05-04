@@ -316,7 +316,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
   }, [getCachedData, setCachedData]);
 
   // Update a Bakugan's price (admin only)
-  const handleUpdatePrice = useCallback(async (bakuganId: string, price: number, notes: string, referenceUri: string, date: string) => {
+  const handleUpdatePrice = useCallback(async (bakuganId: string, price: number, notes: string, referenceUri: string, date: string, difficultyOfObtaining?: number) => {
     try {
       // Set loading state to true to show loading indicator
       setLoading(true);
@@ -331,6 +331,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
           notes,
           referenceUri,
           timestamp: date, // Include the date as timestamp
+          difficultyOfObtaining, // Include the difficulty of obtaining if provided
         }),
       });
 
@@ -389,7 +390,8 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
     specialProperties: string,
     series: string,
     imageUrl: string,
-    referenceUri: string
+    referenceUri: string,
+    difficultyOfObtaining: number
   ) => {
     try {
       // Set loading state to true to show loading indicator
@@ -408,6 +410,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
           series,
           imageUrl,
           referenceUri,
+          difficultyOfObtaining,
         }),
       });
 
@@ -427,7 +430,8 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5 }: UseBakugan
             specialProperties, 
             series,
             imageUrl, 
-            referenceUri 
+            referenceUri,
+            difficultyOfObtaining
           } : item
         )
       );

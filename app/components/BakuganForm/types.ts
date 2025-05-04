@@ -32,7 +32,8 @@ export interface AddBakuganFormProps {
     imageUrl: string,
     currentPrice: number,
     referenceUri: string,
-    date: string
+    date: string,
+    difficultyOfObtaining?: number
   ) => void;
   onUpdateBakugan?: (
     id: string,

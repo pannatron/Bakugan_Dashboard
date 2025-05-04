@@ -24,6 +24,8 @@ interface AddBakuganFieldsProps {
   setReferenceUri: (uri: string) => void;
   date: string;
   setDate: (date: string) => void;
+  difficultyOfObtaining?: number;
+  setDifficultyOfObtaining?: (difficulty: number) => void;
 }
 
 const AddBakuganFields = ({
@@ -43,6 +45,8 @@ const AddBakuganFields = ({
   setReferenceUri,
   date,
   setDate,
+  difficultyOfObtaining = 5,
+  setDifficultyOfObtaining,
 }: AddBakuganFieldsProps) => {
   const elements: ElementOption[] = [
     { value: 'Pyrus', image: '/element/Pyrus.svg' },
@@ -238,6 +242,41 @@ const AddBakuganFields = ({
           placeholder="Enter reference URI for price"
         />
       </div>
+
+      {/* Difficulty of Obtaining */}
+      {setDifficultyOfObtaining && (
+        <div>
+          <label htmlFor="difficultyOfObtaining" className="block text-sm font-medium text-gray-300 mb-1">
+            Difficulty of Obtaining (1-10)
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              id="difficultyOfObtaining"
+              min="1"
+              max="10"
+              step="1"
+              value={difficultyOfObtaining}
+              onChange={(e) => setDifficultyOfObtaining(parseInt(e.target.value))}
+              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            />
+            <span className="text-amber-300 font-medium min-w-[2.5rem] text-center">
+              {difficultyOfObtaining}/10
+            </span>
+          </div>
+          <div className="mt-2 flex justify-between">
+            {Array.from({ length: 10 }).map((_, index) => (
+              <span 
+                key={index} 
+                className={`text-sm cursor-pointer ${index < difficultyOfObtaining ? 'text-yellow-400' : 'text-gray-600'}`}
+                onClick={() => setDifficultyOfObtaining(index + 1)}
+              >
+                ★
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 };

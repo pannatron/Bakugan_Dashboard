@@ -36,7 +36,7 @@ export async function GET(
     // Then for entries with the same date, sort by _id in descending order
     // This ensures that newer entries (added later) appear first when dates are the same
     const priceHistory = await PriceHistory.find({ bakuganId: id })
-      .select('_id price timestamp notes referenceUri') // Only select needed fields
+      .select('_id price timestamp notes referenceUri difficultyOfObtaining') // Only select needed fields
       .sort({ timestamp: -1, _id: -1 })
       .limit(20) // Limit to most recent 20 entries for performance
       .lean();
@@ -64,7 +64,7 @@ export async function PATCH(
 
     const { id } = params;
     const body = await request.json();
-    const { price, notes, referenceUri, timestamp } = body;
+    const { price, notes, referenceUri, timestamp, difficultyOfObtaining } = body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -97,6 +97,12 @@ export async function PATCH(
       bakugan.referenceUri = referenceUri;
     }
     
+    // Update difficulty of obtaining if provided
+    if (difficultyOfObtaining !== undefined) {
+      // Ensure it's between 1 and 10
+      bakugan.difficultyOfObtaining = Math.min(Math.max(Math.round(difficultyOfObtaining), 1), 10);
+    }
+    
     // Update the date - it's required
     if (!timestamp) {
       console.error('Timestamp is missing in request body:', body);
@@ -117,12 +123,18 @@ export async function PATCH(
     // Always use the timestamp provided by the client
     console.log('Original timestamp from client:', timestamp);
     
+    // Use the provided difficultyOfObtaining or fall back to the bakugan's value
+    const finalDifficultyValue = difficultyOfObtaining !== undefined 
+      ? Math.min(Math.max(Math.round(difficultyOfObtaining), 1), 10)
+      : bakugan.difficultyOfObtaining;
+    
     const priceHistoryEntry = await PriceHistory.create({
       bakuganId: id,
       price,
       timestamp: timestamp, // Use the timestamp directly as provided by the client
       notes: notes || '',
       referenceUri: referenceUri || '',
+      difficultyOfObtaining: finalDifficultyValue, // Use the finalized difficulty value
     });
     
     console.log('Created price history with timestamp:', timestamp);
@@ -157,7 +169,8 @@ export async function PUT(
       specialProperties, 
       series,
       imageUrl,
-      referenceUri 
+      referenceUri,
+      difficultyOfObtaining
     } = body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -194,7 +207,26 @@ export async function PUT(
     if (imageUrl) bakugan.imageUrl = imageUrl;
     if (referenceUri) bakugan.referenceUri = referenceUri;
     
+    // Update difficulty of obtaining if provided
+    if (difficultyOfObtaining !== undefined) {
+      // Ensure it's between 1 and 10
+      bakugan.difficultyOfObtaining = Math.min(Math.max(Math.round(difficultyOfObtaining), 1), 10);
+    }
+    
     await bakugan.save();
+
+    // Also update the most recent price history entry with the new difficultyOfObtaining value
+    if (difficultyOfObtaining !== undefined) {
+      // Find the most recent price history entry for this Bakugan
+      const latestPriceHistory = await PriceHistory.findOne({ bakuganId: id })
+        .sort({ timestamp: -1, _id: -1 });
+      
+      if (latestPriceHistory) {
+        // Update the difficultyOfObtaining value
+        latestPriceHistory.difficultyOfObtaining = Math.min(Math.max(Math.round(difficultyOfObtaining), 1), 10);
+        await latestPriceHistory.save();
+      }
+    }
 
     return NextResponse.json(bakugan);
   } catch (error: any) {

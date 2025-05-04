@@ -7,7 +7,7 @@ import PriceUpdateForm from './BakuganCard/PriceUpdateForm';
 interface PriceHistoryManagerProps {
   bakugan: Bakugan;
   priceHistory: PricePoint[];
-  onUpdatePrice: (id: string, price: number, notes: string, referenceUri: string, date: string) => Promise<void | boolean> | void;
+  onUpdatePrice: (id: string, price: number, notes: string, referenceUri: string, date: string, difficultyOfObtaining?: number) => Promise<void | boolean> | void;
   onClose: () => void;
   onDeletePriceHistory?: (priceHistoryId: string, bakuganId: string) => Promise<boolean>;
 }
@@ -47,7 +47,7 @@ const PriceHistoryManager = ({
     setSelectedPricePoint(null);
   };
 
-  const handlePriceUpdate = async (id: string, price: number, notes: string, referenceUri: string, date: string) => {
+  const handlePriceUpdate = async (id: string, price: number, notes: string, referenceUri: string, date: string, difficultyOfObtaining?: number) => {
     try {
       setIsLoading(true);
       
@@ -58,7 +58,8 @@ const PriceHistoryManager = ({
         notes,
         referenceUri,
         timestamp: new Date(date).toISOString(),
-        bakuganId: id
+        bakuganId: id,
+        difficultyOfObtaining
       };
       
       // Add to the sorted price history
@@ -67,7 +68,7 @@ const PriceHistoryManager = ({
       }));
       
       // Call the API to update the price
-      await onUpdatePrice(id, price, notes, referenceUri, date);
+      await onUpdatePrice(id, price, notes, referenceUri, date, difficultyOfObtaining);
       
       setShowUpdateForm(false);
       setSelectedPricePoint(null);
@@ -99,6 +100,7 @@ const PriceHistoryManager = ({
           initialNotes={selectedPricePoint?.notes || ''}
           initialReferenceUri={selectedPricePoint?.referenceUri || ''}
           initialDate={selectedPricePoint ? new Date(selectedPricePoint.timestamp).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+          initialDifficultyOfObtaining={selectedPricePoint?.difficultyOfObtaining || priceHistory[0]?.difficultyOfObtaining || 5}
           onUpdatePrice={handlePriceUpdate}
           onCancel={handleCancelUpdate}
         />

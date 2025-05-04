@@ -9,6 +9,7 @@ export interface Bakugan {
   imageUrl: string;
   currentPrice: number;
   referenceUri: string;
+  difficultyOfObtaining: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,6 +28,7 @@ export interface PricePoint {
   timestamp: string;
   notes: string;
   referenceUri?: string;
+  difficultyOfObtaining?: number;
 }
 
 // Element definitions with images

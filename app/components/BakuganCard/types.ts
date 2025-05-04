@@ -5,6 +5,7 @@ export interface PricePoint {
   timestamp: string;
   notes?: string;
   referenceUri?: string;
+  difficultyOfObtaining?: number;
 }
 
 export interface BakuganCardProps {
@@ -24,7 +25,7 @@ export interface BakuganCardProps {
   portfolioId?: string;
   quantity?: number;
   activeTab?: 'portfolio' | 'favorites' | 'main';
-  onUpdatePrice: (id: string, price: number, notes: string, referenceUri: string, date: string) => void;
+  onUpdatePrice: (id: string, price: number, notes: string, referenceUri: string, date: string, difficultyOfObtaining?: number) => void;
   onUpdateDetails?: (
     id: string,
     names: string[],
@@ -33,7 +34,8 @@ export interface BakuganCardProps {
     specialProperties: string,
     series: string,
     imageUrl: string,
-    referenceUri: string
+    referenceUri: string,
+    difficultyOfObtaining: number
   ) => Promise<boolean>;
   onDeleteBakugan?: (id: string) => void;
   onAddToFavorite?: (id: string) => void;
