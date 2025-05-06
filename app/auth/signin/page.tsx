@@ -112,6 +112,11 @@ export default function SignIn() {
               Register
             </Link>
           </p>
+          <p className="text-sm text-gray-400 mt-2">
+            <Link href="/auth/forgot-password" className="text-blue-400 hover:text-blue-300">
+              Forgot password?
+            </Link>
+          </p>
         </div>
       </div>
     </div>
