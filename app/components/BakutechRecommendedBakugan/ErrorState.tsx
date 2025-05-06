@@ -1,0 +1,30 @@
+'use client';
+
+interface ErrorStateProps {
+  error: string;
+}
+
+const ErrorState = ({ error }: ErrorStateProps) => {
+  const baseClasses = `
+    w-full z-30 mb-8
+    bg-gradient-to-br from-blue-900/40 via-black/40 to-blue-900/40 
+    backdrop-blur-md rounded-2xl p-4 border border-blue-500/30 
+    shadow-[0_0_15px_rgba(59,130,246,0.15)] 
+    hover:shadow-[0_0_20px_rgba(59,130,246,0.25)] 
+    hover:border-blue-400/50
+    transition-all duration-300 ease-in-out
+    relative
+  `;
+
+  return (
+    <div className={baseClasses}>
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 animate-pulse"></div>
+      <h2 className="text-xl font-semibold text-blue-300 mb-4">Recommended BakuTech</h2>
+      <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300">
+        <p className="font-semibold">Error: {error}</p>
+      </div>
+    </div>
+  );
+};
+
+export default ErrorState;

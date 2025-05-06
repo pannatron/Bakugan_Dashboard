@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import RecommendedBakugan from './components/RecommendedBakugan';
 import BakutechRecommendedBakugan from './components/BakutechRecommendedBakugan';
@@ -10,6 +10,23 @@ function HomeContent() {
   const { data: session } = useSession();
   const user = session?.user;
   const [showBakutech, setShowBakutech] = useState(true);
+  const [useSimpleView, setUseSimpleView] = useState(false);
+
+  // Check if mobile/tablet and set initial view mode
+  useEffect(() => {
+    const checkDeviceType = () => {
+      const width = window.innerWidth;
+      const isMobileDevice = width < 768;
+      const isTabletDevice = width >= 768 && width <= 1024;
+      
+      // Use simple view on both mobile and tablet devices for better performance
+      setUseSimpleView(isMobileDevice || isTabletDevice);
+    };
+    
+    checkDeviceType();
+    window.addEventListener('resize', checkDeviceType);
+    return () => window.removeEventListener('resize', checkDeviceType);
+  }, []);
 
   const toggleDisplay = () => {
     setShowBakutech(prev => !prev);
@@ -37,7 +54,11 @@ function HomeContent() {
             showBakutech ? 'opacity-0 scale-95 absolute inset-0 z-0 pointer-events-none' : 'opacity-100 scale-100 z-50 pointer-events-auto'
           }`}
         >
-          <RecommendedBakugan onToggle={toggleDisplay} />
+          <RecommendedBakugan 
+            onToggle={toggleDisplay} 
+            useSimpleView={useSimpleView}
+            setUseSimpleView={setUseSimpleView}
+          />
         </div>
         
         <div
@@ -45,7 +66,11 @@ function HomeContent() {
             showBakutech ? 'opacity-100 scale-100 z-50 pointer-events-auto' : 'opacity-0 scale-95 absolute inset-0 z-0 pointer-events-none'
           }`}
         >
-          <BakutechRecommendedBakugan onToggle={toggleDisplay} />
+          <BakutechRecommendedBakugan 
+            onToggle={toggleDisplay} 
+            useSimpleView={useSimpleView}
+            setUseSimpleView={setUseSimpleView}
+          />
         </div>
       </div>
       
