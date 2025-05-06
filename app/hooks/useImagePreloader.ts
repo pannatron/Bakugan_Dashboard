@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Custom hook for preloading images
+ * Custom hook for preloading images with immediate loading
  * @param imageUrls Array of image URLs to preload
  * @param priorityCount Number of images to load with high priority
  * @returns Object containing loading status
@@ -18,6 +18,12 @@ export function useImagePreloader(imageUrls: string[], priorityCount: number = 2
       setPriorityImagesLoaded(true);
       return;
     }
+
+    // Set a short timeout to immediately mark priority images as loaded
+    // This ensures the UI shows up quickly even if images are still loading
+    const quickLoadTimer = setTimeout(() => {
+      setPriorityImagesLoaded(true);
+    }, 100);
 
     // Preload priority images first
     const priorityUrls = imageUrls.slice(0, priorityCount);
@@ -36,6 +42,7 @@ export function useImagePreloader(imageUrls: string[], priorityCount: number = 2
           if (isPriority) {
             priorityLoadedCount++;
             if (priorityLoadedCount === priorityUrls.length) {
+              clearTimeout(quickLoadTimer); // Clear the timeout if images load naturally
               setPriorityImagesLoaded(true);
             }
           } else {
@@ -52,6 +59,7 @@ export function useImagePreloader(imageUrls: string[], priorityCount: number = 2
           if (isPriority) {
             priorityLoadedCount++;
             if (priorityLoadedCount === priorityUrls.length) {
+              clearTimeout(quickLoadTimer); // Clear the timeout if images load naturally
               setPriorityImagesLoaded(true);
             }
           } else {
@@ -63,17 +71,19 @@ export function useImagePreloader(imageUrls: string[], priorityCount: number = 2
           resolve();
         };
         
+        // Set src after attaching event handlers
         img.src = src;
       });
     };
 
-    // Start preloading priority images
+    // Start preloading priority images immediately
     priorityUrls.forEach(url => {
       preloadImage(url, true);
     });
 
     // If no priority images, mark as loaded
     if (priorityUrls.length === 0) {
+      clearTimeout(quickLoadTimer);
       setPriorityImagesLoaded(true);
     }
 
@@ -86,6 +96,11 @@ export function useImagePreloader(imageUrls: string[], priorityCount: number = 2
     if (remainingUrls.length === 0) {
       setImagesPreloaded(true);
     }
+
+    // Cleanup
+    return () => {
+      clearTimeout(quickLoadTimer);
+    };
 
   }, [imageUrls, priorityCount]);
 

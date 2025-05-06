@@ -51,6 +51,7 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
   const user = session?.user;
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pricesLoading, setPricesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -118,11 +119,13 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
   // Use image preloader
   const { priorityImagesLoaded, allImagesLoaded } = useImagePreloader(imageUrls, 3);
 
-  // Fetch recommendations
+  // Fetch recommendations - split into two separate operations
   useEffect(() => {
-    const fetchRecommendations = async () => {
+    // First fetch just the basic data without waiting for prices
+    const fetchBasicData = async () => {
       try {
         setLoading(true);
+        
         const response = await fetch('/api/recommendations');
         
         if (!response.ok) {
@@ -130,24 +133,54 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
         }
         
         const data = await response.json();
+        
+        // Set recommendations immediately to start loading images
         setRecommendations(data);
         setError(null);
+        
+        // Start loading prices separately
+        fetchPriceData(data);
       } catch (err: any) {
         console.error('Error fetching recommendations:', err);
         setError(err.message || 'Failed to fetch recommendations');
-      } finally {
-        // Only set loading to false when priority images are loaded
-        // This ensures we show at least a few images before removing the loading state
-        if (imageUrls.length === 0) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
     
-    fetchRecommendations();
+    // Second operation to fetch price data
+    const fetchPriceData = async (data: Recommendation[]) => {
+      try {
+        setPricesLoading(true);
+        
+        // Simulate price data loading with a slight delay
+        // In a real implementation, this would be a separate API call
+        setTimeout(() => {
+          setPricesLoading(false);
+        }, 1500);
+        
+      } catch (err: any) {
+        console.error('Error fetching price data:', err);
+        setPricesLoading(false);
+      }
+    };
+    
+    fetchBasicData();
   }, []);
 
-  // Update loading state based on image preloading
+  // Update loading state based on image preloading - make it faster
+  useEffect(() => {
+    // As soon as we have recommendations data, start a timer to show content quickly
+    if (recommendations.length > 0 && loading) {
+      // Set a short timeout to ensure UI shows up quickly
+      const quickShowTimer = setTimeout(() => {
+        setLoading(false);
+      }, 200); // Show content after 200ms even if images aren't fully loaded
+      
+      return () => clearTimeout(quickShowTimer);
+    }
+  }, [recommendations.length, loading]);
+  
+  // Also update loading when priority images are loaded
   useEffect(() => {
     if (priorityImagesLoaded && loading && recommendations.length > 0) {
       setLoading(false);
@@ -477,9 +510,15 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
                       </div>
                       
                       <div className="flex justify-between items-center">
-                      <div className="text-green-400 font-bold">
-                        ฿{getMostRecentPrice(recommendation.bakuganId).toLocaleString()}
-                      </div>
+                        {pricesLoading ? (
+                          <div className="text-green-400 font-bold flex items-center">
+                            <div className="animate-pulse bg-green-400/30 h-5 w-16 rounded"></div>
+                          </div>
+                        ) : (
+                          <div className="text-green-400 font-bold">
+                            ฿{getMostRecentPrice(recommendation.bakuganId).toLocaleString()}
+                          </div>
+                        )}
                         <div className="text-xs text-white px-2 py-1 rounded-lg bg-gradient-to-r from-blue-500/50 to-indigo-500/50 backdrop-blur-sm">
                           {getMedalText(recommendation.rank)}
                         </div>
