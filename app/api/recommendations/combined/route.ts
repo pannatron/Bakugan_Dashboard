@@ -6,8 +6,8 @@ import PriceHistory from '@/app/lib/models/PriceHistory';
 import mongoose from 'mongoose';
 import { cache } from 'react';
 
-// Cache duration in seconds (5 minutes)
-const CACHE_DURATION = 300;
+// Cache duration in seconds (15 minutes for better performance)
+const CACHE_DURATION = 900;
 
 // Cache for combined recommendations data
 let cachedData: any = null;
@@ -35,21 +35,22 @@ export async function GET(request: NextRequest) {
     // Connect to DB (using cached connection if available)
     await getDbConnection();
     
-    // Get all recommendations sorted by rank
+    // Get all recommendations sorted by rank with minimal fields
     const recommendations = await Recommendation.find({})
       .sort({ rank: 1 })
-      .limit(10) // Limit to top 10 recommendations for faster loading
+      .limit(5) // Limit to top 5 recommendations for even faster loading
       .populate({
         path: 'bakuganId',
         model: Bakugan,
-        select: 'names size element imageUrl currentPrice referenceUri' // Only select fields needed for gallery display
+        select: 'names size element imageUrl currentPrice' // Only absolute essential fields
       })
-      .lean(); // Use lean() for faster query execution
+      .lean()
+      .exec(); // Use exec() for better performance
     
     // Extract Bakugan IDs for price history query
     const bakuganIds = recommendations.map(rec => rec.bakuganId._id);
     
-    // Get price history data for all recommendations in a single query
+    // Get only the most recent price history entry for each Bakugan
     const priceHistoryData = await PriceHistory.aggregate([
       {
         $match: {
@@ -64,11 +65,9 @@ export async function GET(request: NextRequest) {
           _id: '$bakuganId',
           priceHistory: {
             $push: {
-              _id: '$_id',
               price: '$price',
-              timestamp: '$timestamp',
-              notes: { $ifNull: ['$notes', ''] },
-              referenceUri: { $ifNull: ['$referenceUri', ''] }
+              timestamp: '$timestamp'
+              // Removed notes and referenceUri to reduce payload size
             }
           }
         }
@@ -76,10 +75,10 @@ export async function GET(request: NextRequest) {
       {
         $project: {
           bakuganId: '$_id',
-          priceHistory: { $slice: ['$priceHistory', 3] } // Limit to just 3 most recent entries
+          priceHistory: { $slice: ['$priceHistory', 1] } // Get only the most recent price entry
         }
       }
-    ]).allowDiskUse(true);
+    ], { allowDiskUse: true });
     
     // Transform price history data into a map for easier access
     const priceHistoryMap = priceHistoryData.reduce((acc, item) => {

@@ -335,74 +335,33 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
         </button>
       </div>
       
-      {/* แสดงรูปแบบที่ง่ายกว่าในช่วงโหลดครั้งแรก */}
+      {/* แสดงรูปแบบที่เรียบง่ายที่สุดในช่วงโหลดครั้งแรก */}
       {!allImagesLoaded ? (
-        // Simple Grid View during initial load - ใช้ Grid แบบง่ายระหว่างโหลด
-        <div className="w-full relative rounded-xl z-50 py-4">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-black/80 to-indigo-900/30 rounded-xl" />
+        // Ultra-Simple List View - ใช้ List แบบเรียบง่ายที่สุดระหว่างโหลด
+        <div className="w-full relative rounded-xl z-50 py-2">
+          {/* ลดความซับซ้อนของพื้นหลังลงอีก */}
+          <div className="absolute inset-0 bg-black/50 rounded-xl" />
           
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-          )}
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 relative z-10">
-            {recommendations.slice(0, 3).map((recommendation, index) => (
+          {/* แสดงเฉพาะ 2 รายการแรกเท่านั้นเพื่อความเร็ว */}
+          <div className="flex flex-col space-y-2 p-2 relative z-10">
+            {recommendations.slice(0, 2).map((recommendation, index) => (
               <div 
                 key={recommendation._id}
-                className="relative rounded-lg overflow-hidden shadow-md h-48 md:h-64 bg-gradient-to-br from-blue-900/40 to-blue-600/20"
+                className="flex items-center p-2 rounded-lg bg-black/30 border border-blue-500/20"
               >
-                {/* Simplified Image */}
-                <div className="absolute inset-0 w-full h-full">
-                  {recommendation.bakuganId.imageUrl ? (
-                    <div className="relative w-full h-full">
-                      {/* Placeholder/Skeleton */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-blue-600/20">
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-blue-300 text-3xl font-bold opacity-30">
-                            {recommendation.bakuganId.names[0].charAt(0)}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <Image
-                        src={recommendation.bakuganId.imageUrl}
-                        alt={recommendation.bakuganId.names[0]}
-                        fill
-                        sizes="(max-width: 768px) 150px, 200px"
-                        priority={true} // Load all with priority since we're only showing 3
-                        loading="eager"
-                        className="object-cover opacity-0 transition-opacity duration-300"
-                        style={{ objectFit: 'cover', objectPosition: 'center' }}
-                        onLoadingComplete={(image) => {
-                          image.classList.remove('opacity-0');
-                          image.classList.add('opacity-100');
-                        }}
-                        quality={70} // Lower quality for faster loading
-                        placeholder="blur"
-                        blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAFdwI2QOQvhwAAAABJRU5ErkJggg=="
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-blue-300 text-3xl font-bold">
-                        {recommendation.bakuganId.names[0].charAt(0)}
-                      </span>
-                    </div>
-                  )}
+                {/* ใช้ตัวอักษรแทนรูปภาพเพื่อความเร็ว */}
+                <div className="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center mr-3 flex-shrink-0">
+                  <span className="text-blue-300 text-lg font-bold">
+                    {recommendation.bakuganId.names[0].charAt(0)}
+                  </span>
                 </div>
                 
-                {/* Simple overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-70"></div>
-                
-                {/* Simplified Content */}
-                <div className="absolute bottom-0 left-0 right-0 p-2">
+                {/* เนื้อหาแบบเรียบง่ายที่สุด */}
+                <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-bold text-white truncate">
                     {recommendation.bakuganId.names[0]}
                   </h3>
-                  
-                  <div className="flex justify-between items-center mt-1">
+                  <div className="flex justify-between items-center">
                     <div className="text-green-400 text-xs font-bold">
                       ฿{getMostRecentPrice(recommendation.bakuganId).toLocaleString()}
                     </div>
@@ -415,9 +374,9 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
             ))}
           </div>
           
-          {/* Loading message */}
-          <div className="text-center mt-4 text-blue-300 text-sm">
-            Loading 3D gallery...
+          {/* ข้อความโหลดแบบเรียบง่าย */}
+          <div className="text-center mt-2 text-blue-300 text-xs">
+            Loading gallery...
           </div>
         </div>
       ) : (
