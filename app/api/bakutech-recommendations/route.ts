@@ -9,13 +9,13 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB();
     
-    // Get all BakuTech recommendations sorted by rank
+    // Get all BakuTech recommendations sorted by rank with minimal data for gallery display
     const recommendations = await BakutechRecommendation.find({})
       .sort({ rank: 1 })
       .populate({
         path: 'bakuganId',
         model: Bakugan,
-        select: 'names size element specialProperties imageUrl currentPrice referenceUri'
+        select: 'names size element imageUrl currentPrice' // Only select fields needed for gallery display
       });
     
     return NextResponse.json(recommendations);

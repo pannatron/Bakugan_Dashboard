@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
+import { useImagePreloader } from '@/app/hooks/useImagePreloader';
 
 interface PricePoint {
   price: number;
@@ -108,6 +109,14 @@ const BakutechRecommendedBakugan = ({ onToggle }: BakutechRecommendedBakuganProp
     };
   }, [autoRotate]);
 
+  // Extract image URLs for preloading
+  const imageUrls = useMemo(() => {
+    return recommendations.map(rec => rec.bakuganId.imageUrl).filter(Boolean);
+  }, [recommendations]);
+
+  // Use image preloader
+  const { priorityImagesLoaded, allImagesLoaded } = useImagePreloader(imageUrls, 3);
+
   // Fetch recommendations
   useEffect(() => {
     const fetchRecommendations = async () => {
@@ -126,12 +135,23 @@ const BakutechRecommendedBakugan = ({ onToggle }: BakutechRecommendedBakuganProp
         console.error('Error fetching BakuTech recommendations:', err);
         setError(err.message || 'Failed to fetch BakuTech recommendations');
       } finally {
-        setLoading(false);
+        // Only set loading to false when priority images are loaded
+        // This ensures we show at least a few images before removing the loading state
+        if (imageUrls.length === 0) {
+          setLoading(false);
+        }
       }
     };
     
     fetchRecommendations();
   }, []);
+
+  // Update loading state based on image preloading
+  useEffect(() => {
+    if (priorityImagesLoaded && loading && recommendations.length > 0) {
+      setLoading(false);
+    }
+  }, [priorityImagesLoaded, loading, recommendations.length]);
 
   // Get medal color based on rank
   const getMedalColor = (rank: number) => {
@@ -403,26 +423,17 @@ const BakutechRecommendedBakugan = ({ onToggle }: BakutechRecommendedBakuganProp
                             sizes="(max-width: 768px) 100vw, 300px"
                             priority={index < 2} // Load the first two images with priority
                             loading={index < 2 ? "eager" : "lazy"}
-                            className="object-cover transition-opacity duration-300"
-                            style={{ objectFit: 'cover' }}
+                            className="object-cover opacity-0 transition-opacity duration-300"
+                            style={{ 
+                              objectFit: 'cover',
+                              objectPosition: 'center'
+                            }}
                             onLoadingComplete={(image) => {
                               // Fade in the image once it's loaded
                               image.classList.remove('opacity-0');
+                              image.classList.add('opacity-100');
                             }}
-                            onLoad={(event) => {
-                              // Ensure the image is visible after load
-                              const target = event.target as HTMLImageElement;
-                              if (target) {
-                                target.style.opacity = '1';
-                              }
-                            }}
-                            // Start with opacity 0 and transition to full opacity when loaded
-                            onLoadStart={(event) => {
-                              const target = event.target as HTMLImageElement;
-                              if (target) {
-                                target.style.opacity = '0';
-                              }
-                            }}
+                            unoptimized={true} // Skip Next.js image optimization for faster loading
                           />
                         </div>
                       ) : (

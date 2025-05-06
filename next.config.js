@@ -25,6 +25,21 @@ const nextConfig = {
         hostname: '**',
       },
     ],
+    // Optimize image loading
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60, // Cache images for at least 60 seconds
+    dangerouslyAllowSVG: true, // Allow SVG images
+    contentDispositionType: 'attachment', // Improve loading performance
+    disableStaticImages: false, // Keep static image imports
+  },
+  // Optimize performance
+  swcMinify: true, // Use SWC minifier for better performance
+  compiler: {
+    // Remove console logs in production
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
   },
 }
 
