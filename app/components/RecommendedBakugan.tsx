@@ -119,27 +119,36 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
   // Use image preloader
   const { priorityImagesLoaded, allImagesLoaded } = useImagePreloader(imageUrls, 3);
 
-  // Fetch recommendations - split into two separate operations
+  // Fetch recommendations - split into two separate API calls
   useEffect(() => {
     // First fetch just the basic data without waiting for prices
     const fetchBasicData = async () => {
       try {
         setLoading(true);
         
-        const response = await fetch('/api/recommendations');
+        console.log('Fetching basic recommendations data...');
+        const startTime = performance.now();
+        
+        // Use the new basic endpoint that returns minimal data for fast loading
+        const response = await fetch('/api/recommendations/basic');
         
         if (!response.ok) {
           throw new Error('Failed to fetch recommendations');
         }
         
         const data = await response.json();
+        const endTime = performance.now();
+        console.log(`Basic recommendations data fetched in ${endTime - startTime}ms`);
         
         // Set recommendations immediately to start loading images
         setRecommendations(data);
         setError(null);
+        setLoading(false);
         
         // Start loading prices separately
-        fetchPriceData(data);
+        if (data.length > 0) {
+          fetchPriceData(data);
+        }
       } catch (err: any) {
         console.error('Error fetching recommendations:', err);
         setError(err.message || 'Failed to fetch recommendations');
@@ -152,12 +161,46 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
       try {
         setPricesLoading(true);
         
-        // Simulate price data loading with a slight delay
-        // In a real implementation, this would be a separate API call
-        setTimeout(() => {
-          setPricesLoading(false);
-        }, 1500);
+        console.log('Fetching price history data...');
+        const startTime = performance.now();
         
+        // Extract Bakugan IDs from the recommendations
+        const bakuganIds = data.map(rec => rec.bakuganId._id);
+        
+        // Fetch price history data for these Bakugan IDs
+        const priceResponse = await fetch('/api/recommendations/price-history', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ bakuganIds }),
+        });
+        
+        if (!priceResponse.ok) {
+          throw new Error('Failed to fetch price history');
+        }
+        
+        const priceData = await priceResponse.json();
+        const endTime = performance.now();
+        console.log(`Price history data fetched in ${endTime - startTime}ms`);
+        
+        // Update recommendations with price history data
+        setRecommendations(prevRecs => {
+          return prevRecs.map(rec => {
+            const bakuganId = rec.bakuganId._id;
+            const priceHistory = priceData[bakuganId] || [];
+            
+            return {
+              ...rec,
+              bakuganId: {
+                ...rec.bakuganId,
+                priceHistory,
+              }
+            };
+          });
+        });
+        
+        setPricesLoading(false);
       } catch (err: any) {
         console.error('Error fetching price data:', err);
         setPricesLoading(false);
