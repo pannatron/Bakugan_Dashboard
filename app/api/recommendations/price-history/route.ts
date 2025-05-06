@@ -2,11 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/app/lib/mongodb';
 import PriceHistory from '@/app/lib/models/PriceHistory';
 import mongoose from 'mongoose';
+import { cache } from 'react';
+
+// Cache duration in seconds (5 minutes)
+const CACHE_DURATION = 300;
+
+// Cache for price history data
+const priceHistoryCache = new Map<string, { data: any, timestamp: number }>();
+
+// Cached database connection
+const getDbConnection = cache(async () => {
+  await connectDB();
+  return true;
+});
 
 // POST /api/recommendations/price-history - Get price history for a list of Bakugan IDs
 export async function POST(request: NextRequest) {
   try {
-    await connectDB();
+    // Connect to DB (using cached connection if available)
+    await getDbConnection();
     
     // Get the list of Bakugan IDs from the request body
     const { bakuganIds } = await request.json();
@@ -26,6 +40,17 @@ export async function POST(request: NextRequest) {
         { error: 'No valid Bakugan IDs provided' },
         { status: 400 }
       );
+    }
+    
+    // Create a cache key from the sorted IDs to ensure consistent caching
+    const cacheKey = [...validIds].sort().join(',');
+    const now = Date.now();
+    
+    // Check if we have a valid cache for this set of IDs
+    const cachedData = priceHistoryCache.get(cacheKey);
+    if (cachedData && (now - cachedData.timestamp) / 1000 < CACHE_DURATION) {
+      // Return cached data if it's still valid
+      return NextResponse.json(cachedData.data);
     }
     
     // Convert string IDs to ObjectIds
@@ -50,8 +75,9 @@ export async function POST(request: NextRequest) {
               _id: '$_id',
               price: '$price',
               timestamp: '$timestamp',
-              notes: '$notes',
-              referenceUri: '$referenceUri'
+              // Only include essential fields to reduce payload size
+              notes: { $ifNull: ['$notes', ''] },
+              referenceUri: { $ifNull: ['$referenceUri', ''] }
             }
           }
         }
@@ -59,10 +85,10 @@ export async function POST(request: NextRequest) {
       {
         $project: {
           bakuganId: '$_id',
-          priceHistory: { $slice: ['$priceHistory', 5] } // Limit to the 5 most recent entries
+          priceHistory: { $slice: ['$priceHistory', 3] } // Limit to just 3 most recent entries to reduce payload
         }
       }
-    ]);
+    ]).allowDiskUse(true); // Allow disk use for large datasets
     
     // Transform the data into a more usable format
     const result = priceHistoryData.reduce((acc, item) => {
@@ -70,7 +96,21 @@ export async function POST(request: NextRequest) {
       return acc;
     }, {});
     
-    return NextResponse.json(result);
+    // Update cache
+    priceHistoryCache.set(cacheKey, { data: result, timestamp: now });
+    
+    // Limit cache size to prevent memory issues (keep only 50 most recent entries)
+    if (priceHistoryCache.size > 50) {
+      const oldestKey = Array.from(priceHistoryCache.entries())
+        .sort((a, b) => a[1].timestamp - b[1].timestamp)[0][0];
+      priceHistoryCache.delete(oldestKey);
+    }
+    
+    // Set cache headers
+    const headers = new Headers();
+    headers.set('Cache-Control', `public, max-age=${CACHE_DURATION}`);
+    
+    return NextResponse.json(result, { headers });
   } catch (error: any) {
     console.error('Error fetching price history data:', error);
     return NextResponse.json(

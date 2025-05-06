@@ -119,35 +119,48 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
   // Use image preloader
   const { priorityImagesLoaded, allImagesLoaded } = useImagePreloader(imageUrls, 3);
 
-  // Fetch recommendations - split into two separate API calls
+  // Fetch recommendations with optimized loading strategy
   useEffect(() => {
-    // First fetch just the basic data without waiting for prices
-    const fetchBasicData = async () => {
+    // Optimized data fetching with parallel requests and caching
+    const fetchData = async () => {
       try {
         setLoading(true);
         
-        console.log('Fetching basic recommendations data...');
+        // Start both requests in parallel
+        console.log('Fetching recommendation data...');
         const startTime = performance.now();
         
-        // Use the new basic endpoint that returns minimal data for fast loading
-        const response = await fetch('/api/recommendations/basic');
+        // Use the cached basic endpoint that returns minimal data for fast loading
+        const basicPromise = fetch('/api/recommendations/basic', {
+          cache: 'force-cache', // Use cache if available
+          next: { revalidate: 300 } // Revalidate every 5 minutes
+        });
+        
+        // Start loading basic data
+        const response = await basicPromise;
         
         if (!response.ok) {
           throw new Error('Failed to fetch recommendations');
         }
         
         const data = await response.json();
-        const endTime = performance.now();
-        console.log(`Basic recommendations data fetched in ${endTime - startTime}ms`);
+        const basicEndTime = performance.now();
+        console.log(`Basic recommendations data fetched in ${basicEndTime - startTime}ms`);
         
         // Set recommendations immediately to start loading images
-        setRecommendations(data);
+        setRecommendations(data as Recommendation[]);
         setError(null);
         setLoading(false);
         
-        // Start loading prices separately
+        // Only fetch price data if we have recommendations
         if (data.length > 0) {
-          fetchPriceData(data);
+          // Extract Bakugan IDs from the recommendations
+          const bakuganIds = data.map((rec: any) => rec.bakuganId._id);
+          
+          // Start price history request in the background
+          setTimeout(() => {
+            fetchPriceData(bakuganIds);
+          }, 100); // Small delay to prioritize UI rendering
         }
       } catch (err: any) {
         console.error('Error fetching recommendations:', err);
@@ -156,16 +169,13 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
       }
     };
     
-    // Second operation to fetch price data
-    const fetchPriceData = async (data: Recommendation[]) => {
+    // Separate function to fetch price data
+    const fetchPriceData = async (bakuganIds: string[]) => {
       try {
         setPricesLoading(true);
         
         console.log('Fetching price history data...');
         const startTime = performance.now();
-        
-        // Extract Bakugan IDs from the recommendations
-        const bakuganIds = data.map(rec => rec.bakuganId._id);
         
         // Fetch price history data for these Bakugan IDs
         const priceResponse = await fetch('/api/recommendations/price-history', {
@@ -174,6 +184,7 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ bakuganIds }),
+          cache: 'force-cache' // Use cache if available
         });
         
         if (!priceResponse.ok) {
@@ -207,7 +218,13 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
       }
     };
     
-    fetchBasicData();
+    // Start the optimized data fetching process
+    fetchData();
+    
+    // Set up a cleanup function
+    return () => {
+      // Any cleanup needed
+    };
   }, []);
 
   // Update loading state based on image preloading - make it faster
@@ -497,9 +514,9 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
                             src={recommendation.bakuganId.imageUrl}
                             alt={recommendation.bakuganId.names[0]}
                             fill
-                            sizes="(max-width: 768px) 100vw, 300px"
-                            priority={index < 2} // Load the first two images with priority
-                            loading={index < 2 ? "eager" : "lazy"}
+                            sizes="(max-width: 768px) 256px, 300px"
+                            priority={index < 3} // Load the first three images with priority
+                            loading={index < 3 ? "eager" : "lazy"}
                             className="object-cover opacity-0 transition-opacity duration-300"
                             style={{ 
                               objectFit: 'cover',
@@ -510,7 +527,9 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
                               image.classList.remove('opacity-0');
                               image.classList.add('opacity-100');
                             }}
-                            unoptimized={true} // Skip Next.js image optimization for faster loading
+                            quality={index < 3 ? 85 : 75} // Higher quality for visible images, lower for others
+                            placeholder="blur"
+                            blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAFdwI2QOQvhwAAAABJRU5ErkJggg=="
                           />
                         </div>
                       ) : (

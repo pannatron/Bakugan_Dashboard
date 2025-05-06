@@ -25,13 +25,15 @@ const nextConfig = {
         hostname: '**',
       },
     ],
-    // Optimize image loading
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60, // Cache images for at least 60 seconds
+    // Optimize image loading - focus on sizes that matter for this app
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [16, 32, 64, 96, 128, 256],
+    minimumCacheTTL: 3600, // Cache images for at least 1 hour to improve performance
     dangerouslyAllowSVG: true, // Allow SVG images
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     contentDispositionType: 'attachment', // Improve loading performance
     disableStaticImages: false, // Keep static image imports
+    unoptimized: false, // Ensure images are optimized
   },
   // Optimize performance
   swcMinify: true, // Use SWC minifier for better performance
