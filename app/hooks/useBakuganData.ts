@@ -533,45 +533,66 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5, prioritizeBa
     }
   }, [fetchBakuganItems]);
 
-  // Prefetch price histories for visible Bakugan items
+  // Track which items are currently being fetched to prevent duplicate requests
+  const fetchingPriceHistoriesRef = useRef<Set<string>>(new Set());
+  
+  // Prefetch price histories for visible Bakugan items with improved deduplication
   const prefetchPriceHistories = useCallback(async () => {
     // Only fetch if we're not in a transitioning state
     if (isTransitioning) return;
     
-    // Fetch price histories for all visible items
-    const visibleBakugan = filteredItems;
+    // Limit the number of items to prefetch at once to reduce load
+    const visibleBakugan = filteredItems.slice(0, pagination.limit);
     
-    // Create an array of promises for parallel fetching
-    const fetchPromises = visibleBakugan
-      .filter(bakugan => !priceHistories[bakugan._id])
-      .map(async (bakugan) => {
-        // Check cache first
-        const cacheKey = `priceHistory-${bakugan._id}`;
-        const cachedData = getCachedData(cacheKey);
-        
-        if (cachedData) {
-          return { id: bakugan._id, data: cachedData };
-        } else {
-          try {
-            const response = await fetch(`/api/bakugan/${bakugan._id}`);
-            if (response.ok) {
-              const data = await response.json();
-              const priceHistory = data.priceHistory || [];
-              
-              // Store in cache
-              setCachedData(cacheKey, priceHistory);
-              
-              return { id: bakugan._id, data: priceHistory };
-            }
-          } catch (err) {
-            console.error(`Error fetching price history for ${bakugan._id}:`, err);
+    // Create an array of promises for parallel fetching, but only for items
+    // that aren't already in the price histories and aren't currently being fetched
+    const itemsToFetch = visibleBakugan.filter(bakugan => 
+      !priceHistories[bakugan._id] && 
+      !fetchingPriceHistoriesRef.current.has(bakugan._id)
+    );
+    
+    if (itemsToFetch.length === 0) return;
+    
+    console.log(`Prefetching price histories for ${itemsToFetch.length} items`);
+    
+    // Mark these items as being fetched
+    itemsToFetch.forEach(bakugan => {
+      fetchingPriceHistoriesRef.current.add(bakugan._id);
+    });
+    
+    const fetchPromises = itemsToFetch.map(async (bakugan) => {
+      // Check cache first
+      const cacheKey = `priceHistory-${bakugan._id}`;
+      const cachedData = getCachedData(cacheKey);
+      
+      if (cachedData) {
+        return { id: bakugan._id, data: cachedData };
+      } else {
+        try {
+          const response = await fetch(`/api/bakugan/${bakugan._id}`);
+          if (response.ok) {
+            const data = await response.json();
+            const priceHistory = data.priceHistory || [];
+            
+            // Store in cache
+            setCachedData(cacheKey, priceHistory);
+            
+            return { id: bakugan._id, data: priceHistory };
           }
-          return null;
+        } catch (err) {
+          console.error(`Error fetching price history for ${bakugan._id}:`, err);
         }
-      });
+        return null;
+      }
+    });
     
     // Wait for all fetches to complete
     const results = await Promise.all(fetchPromises);
+    
+    // Remove items from the fetching set
+    itemsToFetch.forEach(bakugan => {
+      fetchingPriceHistoriesRef.current.delete(bakugan._id);
+    });
     
     // Update state with all results at once to minimize re-renders
     const newHistories = results.reduce<Record<string, PricePoint[]>>((acc, result) => {
@@ -587,7 +608,7 @@ export function useBakuganData({ initialPage = 1, initialLimit = 5, prioritizeBa
         ...newHistories
       }));
     }
-  }, [filteredItems, priceHistories, getCachedData, isTransitioning, setCachedData]);
+  }, [filteredItems, priceHistories, pagination.limit, getCachedData, isTransitioning, setCachedData]);
 
   // Fetch all Bakugan items on component mount
   useEffect(() => {
