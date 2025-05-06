@@ -109,7 +109,7 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
     };
   }, [autoRotate]);
 
-  // Fetch recommendations and price history
+  // Fetch recommendations
   useEffect(() => {
     const fetchRecommendations = async () => {
       try {
@@ -121,25 +121,7 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
         }
         
         const data = await response.json();
-        
-        // Fetch price history for each Bakugan
-        const recommendationsWithPriceHistory = await Promise.all(
-          data.map(async (recommendation: Recommendation) => {
-            try {
-              const bakuganResponse = await fetch(`/api/bakugan/${recommendation.bakuganId._id}`);
-              if (bakuganResponse.ok) {
-                const bakuganData = await bakuganResponse.json();
-                // Update the bakuganId with price history
-                recommendation.bakuganId.priceHistory = bakuganData.priceHistory;
-              }
-            } catch (error) {
-              console.error(`Error fetching price history for Bakugan ${recommendation.bakuganId._id}:`, error);
-            }
-            return recommendation;
-          })
-        );
-        
-        setRecommendations(recommendationsWithPriceHistory);
+        setRecommendations(data);
         setError(null);
       } catch (err: any) {
         console.error('Error fetching recommendations:', err);
