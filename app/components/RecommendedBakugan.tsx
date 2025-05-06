@@ -56,7 +56,7 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [rotation, setRotation] = useState(0);
-  const [autoRotate, setAutoRotate] = useState(true);
+  const [autoRotate, setAutoRotate] = useState(false); // เริ่มต้นปิดการหมุนอัตโนมัติ
   const [isMobile, setIsMobile] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -85,32 +85,6 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Animation loop for auto-rotation with smoother motion
-  useEffect(() => {
-    let lastTime = 0;
-    const rotationSpeed = 0.05; // Reduced from 0.2 for smoother rotation
-    
-    const animate = (timestamp: number) => {
-      if (!lastTime) lastTime = timestamp;
-      const deltaTime = timestamp - lastTime;
-      lastTime = timestamp;
-      
-      if (autoRotate) {
-        // Use deltaTime to ensure consistent rotation speed regardless of frame rate
-        setRotation(prev => (prev + rotationSpeed * (deltaTime / 16.67)) % 360);
-      }
-      animationRef.current = requestAnimationFrame(animate);
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-    
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [autoRotate]);
-
   // Extract image URLs for preloading
   const imageUrls = useMemo(() => {
     return recommendations.map(rec => rec.bakuganId.imageUrl).filter(Boolean);
@@ -118,102 +92,74 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
 
   // Use image preloader
   const { priorityImagesLoaded, allImagesLoaded } = useImagePreloader(imageUrls, 3);
-
-  // Fetch recommendations with optimized loading strategy
+  
+  // Animation loop for auto-rotation with smoother motion - เริ่มหลังจากโหลดเสร็จแล้ว
   useEffect(() => {
-    // Optimized data fetching with parallel requests and caching
+    // เริ่มการหมุนหลังจากโหลดเสร็จแล้วเท่านั้น
+    if (allImagesLoaded && !loading) {
+      // เปิดการหมุนอัตโนมัติหลังจากโหลดเสร็จ
+      setTimeout(() => {
+        setAutoRotate(true);
+      }, 1000); // รอ 1 วินาทีหลังจากโหลดเสร็จ
+      
+      let lastTime = 0;
+      const rotationSpeed = 0.03; // ลดความเร็วลงอีก
+      
+      const animate = (timestamp: number) => {
+        if (!lastTime) lastTime = timestamp;
+        const deltaTime = timestamp - lastTime;
+        lastTime = timestamp;
+        
+        if (autoRotate) {
+          // ลดความถี่ในการอัพเดต
+          setRotation(prev => (prev + rotationSpeed * (deltaTime / 16.67)) % 360);
+        }
+        animationRef.current = requestAnimationFrame(animate);
+      };
+
+      animationRef.current = requestAnimationFrame(animate);
+    }
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [autoRotate, allImagesLoaded, loading]);
+
+  // Fetch recommendations with optimized loading strategy using combined endpoint
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setPricesLoading(true);
         
-        // Start both requests in parallel
-        console.log('Fetching recommendation data...');
+        console.log('Fetching combined recommendation data...');
         const startTime = performance.now();
         
-        // Use the cached basic endpoint that returns minimal data for fast loading
-        const basicPromise = fetch('/api/recommendations/basic', {
+        // Use the new combined endpoint that returns both basic data and price history in one request
+        const response = await fetch('/api/recommendations/combined', {
           cache: 'force-cache', // Use cache if available
           next: { revalidate: 300 } // Revalidate every 5 minutes
         });
-        
-        // Start loading basic data
-        const response = await basicPromise;
         
         if (!response.ok) {
           throw new Error('Failed to fetch recommendations');
         }
         
         const data = await response.json();
-        const basicEndTime = performance.now();
-        console.log(`Basic recommendations data fetched in ${basicEndTime - startTime}ms`);
+        const endTime = performance.now();
+        console.log(`Combined recommendation data fetched in ${endTime - startTime}ms`);
         
-        // Set recommendations immediately to start loading images
+        // Set recommendations with price history already included
         setRecommendations(data as Recommendation[]);
         setError(null);
         setLoading(false);
-        
-        // Only fetch price data if we have recommendations
-        if (data.length > 0) {
-          // Extract Bakugan IDs from the recommendations
-          const bakuganIds = data.map((rec: any) => rec.bakuganId._id);
-          
-          // Start price history request in the background
-          setTimeout(() => {
-            fetchPriceData(bakuganIds);
-          }, 100); // Small delay to prioritize UI rendering
-        }
+        setPricesLoading(false);
       } catch (err: any) {
         console.error('Error fetching recommendations:', err);
         setError(err.message || 'Failed to fetch recommendations');
         setLoading(false);
-      }
-    };
-    
-    // Separate function to fetch price data
-    const fetchPriceData = async (bakuganIds: string[]) => {
-      try {
-        setPricesLoading(true);
-        
-        console.log('Fetching price history data...');
-        const startTime = performance.now();
-        
-        // Fetch price history data for these Bakugan IDs
-        const priceResponse = await fetch('/api/recommendations/price-history', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ bakuganIds }),
-          cache: 'force-cache' // Use cache if available
-        });
-        
-        if (!priceResponse.ok) {
-          throw new Error('Failed to fetch price history');
-        }
-        
-        const priceData = await priceResponse.json();
-        const endTime = performance.now();
-        console.log(`Price history data fetched in ${endTime - startTime}ms`);
-        
-        // Update recommendations with price history data
-        setRecommendations(prevRecs => {
-          return prevRecs.map(rec => {
-            const bakuganId = rec.bakuganId._id;
-            const priceHistory = priceData[bakuganId] || [];
-            
-            return {
-              ...rec,
-              bakuganId: {
-                ...rec.bakuganId,
-                priceHistory,
-              }
-            };
-          });
-        });
-        
-        setPricesLoading(false);
-      } catch (err: any) {
-        console.error('Error fetching price data:', err);
         setPricesLoading(false);
       }
     };
@@ -234,7 +180,7 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
       // Set a short timeout to ensure UI shows up quickly
       const quickShowTimer = setTimeout(() => {
         setLoading(false);
-      }, 200); // Show content after 200ms even if images aren't fully loaded
+      }, 100); // ลดเวลาลงเหลือ 100ms เพื่อแสดงเร็วขึ้น
       
       return () => clearTimeout(quickShowTimer);
     }
@@ -403,14 +349,17 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
         </button>
       </div>
       
-      {/* Enhanced 3D Carousel Gallery */}
+      {/* Simplified 3D Carousel Gallery */}
       <div 
         className={`w-full h-[450px] relative ${hoveredIndex !== null ? '' : 'overflow-hidden'} rounded-xl cursor-grab active:cursor-grabbing z-50`}
         ref={containerRef}
         onMouseEnter={() => setAutoRotate(false)}
         onMouseLeave={() => {
           setIsDragging(false);
-          setAutoRotate(true);
+          // เปิดการหมุนอัตโนมัติเฉพาะเมื่อโหลดเสร็จแล้ว
+          if (allImagesLoaded) {
+            setAutoRotate(true);
+          }
         }}
         onMouseDown={(e) => {
           e.preventDefault(); // Prevent default behavior
@@ -445,13 +394,17 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
           setIsDragging(false);
         }}
       >
-        {/* Premium background effects */}
+        {/* Simplified background - รวมเป็นเอฟเฟกต์เดียว */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-black/80 to-indigo-900/30" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-5 mix-blend-overlay"></div>
         
-        {/* Ambient light effect */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[150px] bg-blue-500/10 blur-[80px] rounded-full"></div>
+        {/* เพิ่มเอฟเฟกต์พื้นหลังเฉพาะเมื่อโหลดเสร็จแล้ว */}
+        {allImagesLoaded && (
+          <>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15),transparent_50%)]" />
+            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-5 mix-blend-overlay"></div>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[150px] bg-blue-500/10 blur-[80px] rounded-full"></div>
+          </>
+        )}
         
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative w-full h-full" style={{ perspective: '1500px' }}>
@@ -469,10 +422,16 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
                   key={recommendation._id}
                   className="absolute top-1/2 left-1/2 transition-all duration-500 ease-out will-change-transform cursor-pointer"
                   style={{
-                    transform: `translate(-50%, -50%) translateX(${x}px) translateZ(${z}px) scale(${0.6 + scale * 0.4})`,
+                    // ใช้ transform ที่ง่ายกว่าในช่วงโหลด
+                    transform: allImagesLoaded 
+                      ? `translate(-50%, -50%) translateX(${x}px) translateZ(${z}px) scale(${0.6 + scale * 0.4})`
+                      : `translate(-50%, -50%) translateX(${x}px) translateY(0) scale(${0.6 + scale * 0.4})`,
                     zIndex: Math.round(scale * 100) + 40,
                     opacity: scale,
-                    filter: `drop-shadow(0 ${10 * scale}px ${15 * scale}px rgba(59, 130, 246, ${0.2 * scale}))`
+                    // ใช้ filter เฉพาะเมื่อโหลดเสร็จแล้ว
+                    filter: allImagesLoaded 
+                      ? `drop-shadow(0 ${10 * scale}px ${15 * scale}px rgba(59, 130, 246, ${0.2 * scale}))`
+                      : 'none'
                   }}
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(null)}
@@ -491,11 +450,14 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
                       hoveredIndex === index ? 'scale-110 shadow-blue-500/40 shadow-xl z-50 brightness-110' : hoveredIndex !== null ? 'brightness-50' : ''
                     }`}
                   >
-                    {/* Enhanced background glow based on rank */}
+                    {/* Simplified background glow */}
                     <div className={`absolute inset-0 bg-gradient-to-br ${getMedalColor(recommendation.rank)} opacity-10`}></div>
-                    <div className={`absolute inset-0 bg-gradient-to-br ${getMedalColor(recommendation.rank)} opacity-0 ${
-                      hoveredIndex === index ? 'animate-pulse-slow opacity-20' : ''
-                    }`}></div>
+                    {/* เพิ่มเอฟเฟกต์เฉพาะเมื่อโหลดเสร็จแล้ว */}
+                    {allImagesLoaded && (
+                      <div className={`absolute inset-0 bg-gradient-to-br ${getMedalColor(recommendation.rank)} opacity-0 ${
+                        hoveredIndex === index ? 'animate-pulse-slow opacity-20' : ''
+                      }`}></div>
+                    )}
                     
                     {/* Bakugan Image with Smooth Loading */}
                     <div className="absolute inset-0 w-full h-full">
@@ -544,12 +506,14 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
                     {/* Enhanced overlay gradient */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70"></div>
                     
-                    {/* Premium shine effect */}
-                    <div 
-                      className={`absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 ${
-                        hoveredIndex === index ? 'animate-shine-slow' : ''
-                      }`}
-                    ></div>
+                    {/* Premium shine effect - เฉพาะเมื่อโหลดเสร็จแล้ว */}
+                    {allImagesLoaded && (
+                      <div 
+                        className={`absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 ${
+                          hoveredIndex === index ? 'animate-shine-slow' : ''
+                        }`}
+                      ></div>
+                    )}
  
                     
                     {/* Content */}
@@ -587,8 +551,10 @@ const RecommendedBakugan = ({ onToggle }: RecommendedBakuganProps) => {
                       </div>
                     </div>
                     
-                    {/* Enhanced shine effect */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                    {/* Enhanced shine effect - เฉพาะเมื่อโหลดเสร็จแล้ว */}
+                    {allImagesLoaded && (
+                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                    )}
                   </div>
                 </div>
               );
