@@ -209,7 +209,7 @@ const PriceHistoryChart = ({
   return (
     <>
       {/* Price History Chart */}
-      <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50 mb-6 transition-all duration-500">
+      <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50 mb-6 transition-all duration-300">
         <div className="flex flex-col space-y-3">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold text-blue-300">Price History</h3>
@@ -246,7 +246,7 @@ const PriceHistoryChart = ({
             )}
           </div>
           
-          {/* Time period selector */}
+          {/* Time period selector - Only show if we have enough price history */}
           {priceHistory.length > 1 && (
             <div className="flex flex-wrap gap-2">
               <button
@@ -315,19 +315,17 @@ const PriceHistoryChart = ({
         
         <div className="h-72 relative">
           {isChartLoading && priceHistory.length > 0 ? (
-            // Skeleton loading for chart - only show if we have price history data
+            // Simple loading indicator instead of skeleton for better performance
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-full h-full flex flex-col">
-                <div className="flex-1 bg-gradient-to-r from-gray-800/30 to-gray-700/20 animate-pulse rounded-lg"></div>
-                <div className="h-8 mt-2 bg-gradient-to-r from-gray-800/30 to-gray-700/20 animate-pulse rounded-lg"></div>
-              </div>
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
             </div>
           ) : priceHistory.length > 0 ? (
             <>
-              <div className="absolute -top-6 right-0 text-xs text-gray-400 p-1 bg-gray-900/50 rounded">
-                {filteredPriceHistory.some(point => point.referenceUri) && 
-                  "Click points for links"}
-              </div>
+              {filteredPriceHistory.some(point => point.referenceUri) && (
+                <div className="absolute -top-6 right-0 text-xs text-gray-400 p-1 bg-gray-900/50 rounded">
+                  Click points for links
+                </div>
+              )}
               <Line data={chartData} options={chartOptions as any} />
             </>
           ) : (

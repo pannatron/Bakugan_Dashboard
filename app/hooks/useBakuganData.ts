@@ -28,7 +28,7 @@ interface FilterState {
   filterMode: 'all' | 'bakugan' | 'bakutech' | 'battle-brawlers' | 'new-vestroia' | 'gundalian-invaders' | 'mechtanium-surge';
 }
 
-export function useBakuganData({ initialPage = 1, initialLimit = 5, prioritizeBakutech = true }: UseBakuganDataProps = {}) {
+export function useBakuganData({ initialPage = 1, initialLimit = 5, prioritizeBakutech = false }: UseBakuganDataProps = {}) {
   // State for the main component
   const [bakuganItems, setBakuganItems] = useState<Bakugan[]>([]);
   const [filteredItems, setFilteredItems] = useState<Bakugan[]>([]);

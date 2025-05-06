@@ -71,29 +71,27 @@ const BakuganCard = ({
   
   const priceTrend = calculatePriceTrend();
 
-  // Initialize with null displayPrice to ensure loading state
+  // Initialize with currentPrice as displayPrice and optimize loading
   useEffect(() => {
-    // Reset displayPrice to null on component mount or when priceHistory changes
-    setDisplayPrice(null);
+    // Set initial display price to current price to avoid null state
+    setDisplayPrice(currentPrice);
+    
+    // Reset chart loading state when priceHistory changes
     setIsChartLoading(true);
-  }, [priceHistory]); // Reset when priceHistory changes
-  
-  // Set chart as loaded when price history data is available or confirmed empty
-  useEffect(() => {
+    
     // Only set display price when price history is loaded
     if (priceHistory && priceHistory.length > 0) {
-      // Short timeout to ensure smooth transition and complete loading
+      // Use a shorter timeout for better performance
       const timer = setTimeout(() => {
         setDisplayPrice(priceHistory[0].price);
         setIsChartLoading(false);
-      }, 800); // Increased timeout to ensure data is fully loaded
+      }, 300); // Reduced timeout for faster loading
       return () => clearTimeout(timer);
     } else if (priceHistory) {
       // If price history is empty array (not undefined/null), use currentPrice
       const timer = setTimeout(() => {
-        setDisplayPrice(currentPrice);
         setIsChartLoading(false);
-      }, 800);
+      }, 200); // Even shorter timeout for empty price history
       return () => clearTimeout(timer);
     }
   }, [priceHistory, currentPrice]);
