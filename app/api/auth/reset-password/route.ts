@@ -87,6 +87,15 @@ export async function PUT(request: NextRequest) {
       );
     }
     
+    // Log the OTP details for debugging
+    console.log('Reset Password - OTP Details:', {
+      providedOtp: otp,
+      storedOtp: user.otp,
+      otpExpiry: user.otpExpiry,
+      currentTime: new Date(),
+      isExpired: user.otpExpiry ? new Date() > user.otpExpiry : true
+    });
+    
     // Validate OTP
     const isValid = user.validateOTP(otp);
     

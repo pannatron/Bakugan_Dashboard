@@ -33,6 +33,9 @@ export default function ForgotPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState('');
+  
+  // Track whether we need to request a new OTP
+  const [needNewOtp, setNeedNewOtp] = useState(false);
 
   // Handle email verification
   const handleEmailVerification = async (e: React.FormEvent) => {
@@ -95,28 +98,57 @@ export default function ForgotPassword() {
     setOtpLoading(true);
     
     try {
-      // Verify the OTP using the send-otp endpoint
-      // This will verify the OTP without changing the password
-      const verifyResponse = await fetch('/api/auth/send-otp', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, otp }),
-      });
+      // Instead of verifying the OTP here, we'll just store it and move to the next step
+      // The actual verification will happen during the password reset step
       
-      if (!verifyResponse.ok) {
-        const errorData = await verifyResponse.json();
-        throw new Error(errorData.error || 'Invalid verification code');
-      }
-
-      // If verification is successful, move to password reset step
+      // Reset the needNewOtp flag when the user enters a new OTP
+      setNeedNewOtp(false);
+      
+      // Move to password reset step
       setStep(ResetStep.PASSWORD_RESET);
     } catch (err: any) {
       console.error('OTP verification error:', err);
       setOtpError(err.message || 'Failed to verify code');
     } finally {
       setOtpLoading(false);
+    }
+  };
+
+  // Request a new OTP
+  const requestNewOtp = async () => {
+    setResetError('');
+    setResetLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get new verification code');
+      }
+      
+      const data = await response.json();
+      
+      // Update the user ID in case it changed
+      if (data.userId) {
+        setUserId(data.userId);
+      }
+      
+      // Go back to OTP verification step
+      setStep(ResetStep.OTP_VERIFICATION);
+      setOtp(''); // Clear the OTP input
+      setOtpError('A new verification code has been sent to your email');
+    } catch (err: any) {
+      console.error('Request new OTP error:', err);
+      setResetError(err.message || 'Failed to get new verification code');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -132,6 +164,12 @@ export default function ForgotPassword() {
     
     if (newPassword !== confirmPassword) {
       setResetError('Passwords do not match');
+      return;
+    }
+    
+    if (needNewOtp) {
+      // If we need a new OTP, request one
+      await requestNewOtp();
       return;
     }
     
@@ -152,26 +190,12 @@ export default function ForgotPassword() {
         setStep(ResetStep.RESET_SUCCESS);
       } else {
         // If failed, it might be because the OTP was cleared during verification
-        // Let's get a new OTP and try again
         const errorData = await response.json();
         
         if (errorData.error === 'Invalid or expired verification code') {
-          // Request a new OTP
-          const getOtpResponse = await fetch('/api/auth/reset-password', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email }),
-          });
-
-          if (!getOtpResponse.ok) {
-            const otpErrorData = await getOtpResponse.json();
-            throw new Error(otpErrorData.error || 'Failed to get new verification code');
-          }
-
-          // Inform the user to check their email for a new code
-          setResetError('A new verification code has been sent to your email. Please check your email and try again.');
+          // Set flag to request a new OTP
+          setNeedNewOtp(true);
+          setResetError('Your verification code has expired. Click "Reset Password" again to get a new code.');
         } else {
           throw new Error(errorData.error || 'Failed to reset password');
         }
@@ -423,7 +447,10 @@ export default function ForgotPassword() {
                 <div className="text-center mt-4">
                   <button
                     type="button"
-                    onClick={() => setStep(ResetStep.OTP_VERIFICATION)}
+                    onClick={() => {
+                      setStep(ResetStep.OTP_VERIFICATION);
+                      setNeedNewOtp(false); // Reset the flag when going back to OTP step
+                    }}
                     className="text-blue-400 hover:text-blue-300 text-sm"
                   >
                     Enter a different verification code
