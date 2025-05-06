@@ -95,7 +95,9 @@ export default function ForgotPassword() {
     setOtpLoading(true);
     
     try {
-      const response = await fetch('/api/auth/send-otp', {
+      // Verify the OTP using the send-otp endpoint
+      // This will verify the OTP without changing the password
+      const verifyResponse = await fetch('/api/auth/send-otp', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -103,14 +105,12 @@ export default function ForgotPassword() {
         body: JSON.stringify({ userId, otp }),
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!verifyResponse.ok) {
+        const errorData = await verifyResponse.json();
         throw new Error(errorData.error || 'Invalid verification code');
       }
 
-      const data = await response.json();
-      
-      // Move to password reset step
+      // If verification is successful, move to password reset step
       setStep(ResetStep.PASSWORD_RESET);
     } catch (err: any) {
       console.error('OTP verification error:', err);
@@ -138,6 +138,7 @@ export default function ForgotPassword() {
     setResetLoading(true);
 
     try {
+      // Try to reset the password with the current OTP
       const response = await fetch('/api/auth/reset-password', {
         method: 'PUT',
         headers: {
@@ -146,13 +147,35 @@ export default function ForgotPassword() {
         body: JSON.stringify({ userId, otp, newPassword }),
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        // If successful, move to success step
+        setStep(ResetStep.RESET_SUCCESS);
+      } else {
+        // If failed, it might be because the OTP was cleared during verification
+        // Let's get a new OTP and try again
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to reset password');
-      }
+        
+        if (errorData.error === 'Invalid or expired verification code') {
+          // Request a new OTP
+          const getOtpResponse = await fetch('/api/auth/reset-password', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+          });
 
-      // Move to success step
-      setStep(ResetStep.RESET_SUCCESS);
+          if (!getOtpResponse.ok) {
+            const otpErrorData = await getOtpResponse.json();
+            throw new Error(otpErrorData.error || 'Failed to get new verification code');
+          }
+
+          // Inform the user to check their email for a new code
+          setResetError('A new verification code has been sent to your email. Please check your email and try again.');
+        } else {
+          throw new Error(errorData.error || 'Failed to reset password');
+        }
+      }
     } catch (err: any) {
       console.error('Password reset error:', err);
       setResetError(err.message || 'Failed to reset password');
@@ -396,6 +419,16 @@ export default function ForgotPassword() {
                 >
                   {resetLoading ? 'Resetting password...' : 'Reset Password'}
                 </button>
+
+                <div className="text-center mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setStep(ResetStep.OTP_VERIFICATION)}
+                    className="text-blue-400 hover:text-blue-300 text-sm"
+                  >
+                    Enter a different verification code
+                  </button>
+                </div>
               </form>
             </>
           )}
