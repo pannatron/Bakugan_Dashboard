@@ -174,6 +174,7 @@ const BakutechRecommendedBakugan = ({
           allImagesLoaded={allImagesLoaded}
           useSimpleView={useSimpleView}
           setUseSimpleView={setUseSimpleView}
+          isMobile={isMobile}
         />
       ) : (
         <>

@@ -8,13 +8,15 @@ interface SimpleListViewProps {
   allImagesLoaded: boolean;
   useSimpleView: boolean;
   setUseSimpleView: (value: boolean) => void;
+  isMobile?: boolean;
 }
 
 const SimpleListView = ({ 
   recommendations, 
   allImagesLoaded, 
   useSimpleView, 
-  setUseSimpleView 
+  setUseSimpleView,
+  isMobile = false
 }: SimpleListViewProps) => {
   return (
     <div className="w-full relative rounded-xl z-50 py-2">
@@ -66,7 +68,7 @@ const SimpleListView = ({
         </div>
       )}
       
-      {useSimpleView && allImagesLoaded && (
+      {useSimpleView && allImagesLoaded && !isMobile && (
         <div className="text-center mt-2 relative z-50">
           <button 
             onClick={() => setUseSimpleView(false)}

@@ -148,6 +148,7 @@ const RecommendedBakugan = ({
           allImagesLoaded={allImagesLoaded}
           useSimpleView={useSimpleView}
           setUseSimpleView={setUseSimpleView}
+          isMobile={isMobile}
         />
       ) : (
         <>
