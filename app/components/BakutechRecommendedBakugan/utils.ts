@@ -2,8 +2,14 @@
 
 import { Bakugan } from './types';
 
-// Helper function to get the most recent price
+// Helper function to get the most recent price - optimized to use pre-calculated price if available
 export const getMostRecentPrice = (bakugan: Bakugan): number => {
+  // Use pre-calculated price if available (added during data processing)
+  if ('calculatedPrice' in bakugan) {
+    return (bakugan as any).calculatedPrice;
+  }
+  
+  // Fallback to original calculation if needed
   if (bakugan.priceHistory && bakugan.priceHistory.length > 0) {
     return bakugan.priceHistory[0].price;
   }

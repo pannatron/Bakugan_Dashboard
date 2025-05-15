@@ -10,15 +10,24 @@ export async function GET(request: NextRequest) {
     await connectDB();
     
     // Get all BakuTech recommendations sorted by rank with minimal data for gallery display
+    // Add lean() to return plain JavaScript objects instead of Mongoose documents
+    // Add cache control headers to enable browser caching
     const recommendations = await BakutechRecommendation.find({})
       .sort({ rank: 1 })
       .populate({
         path: 'bakuganId',
         model: Bakugan,
         select: 'names size element imageUrl currentPrice' // Only select fields needed for gallery display
-      });
+      })
+      .lean();
     
-    return NextResponse.json(recommendations);
+    // Create response with cache control headers
+    const response = NextResponse.json(recommendations);
+    
+    // Set cache control headers to enable browser caching for 5 minutes
+    response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=300');
+    
+    return response;
   } catch (error: any) {
     console.error('Error fetching BakuTech recommendations:', error);
     return NextResponse.json(

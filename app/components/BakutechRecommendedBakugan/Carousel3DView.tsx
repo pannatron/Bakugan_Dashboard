@@ -33,18 +33,21 @@ const Carousel3DView = ({
   const animationRef = useRef<number>();
   const rotationRef = useRef<number>(0);
 
-  // Optimized animation loop for auto-rotation with smoother motion
+  // Highly optimized animation loop for auto-rotation with smoother motion and reduced re-renders
   useEffect(() => {
     // Update rotation ref to avoid unnecessary re-renders
     rotationRef.current = rotation;
     
     let lastTime = 0;
-    // Reduce rotation speed even further on mobile/tablet
-    const rotationSpeed = isMobile ? 0.01 : isTablet ? 0.015 : 0.03;
+    // Further reduce rotation speed for better performance
+    const rotationSpeed = isMobile ? 0.008 : isTablet ? 0.012 : 0.025;
     
-    // Throttle frame updates to reduce CPU/GPU load on mobile/tablet
-    const frameInterval = isMobile ? 4 : isTablet ? 3 : 1; // Reduce update frequency on mobile/tablet
+    // Increase throttling for even better performance
+    const frameInterval = isMobile ? 6 : isTablet ? 4 : 2; // Higher values = fewer updates
     let frameCount = 0;
+    
+    // Use a separate variable to track rotation without triggering re-renders
+    let currentRotation = rotation;
     
     const animate = (timestamp: number) => {
       if (!lastTime) lastTime = timestamp;
@@ -54,17 +57,17 @@ const Carousel3DView = ({
       frameCount++;
       
       if (autoRotate) {
+        // Update internal rotation value on every frame
+        currentRotation = (currentRotation + rotationSpeed * (deltaTime / 16.67)) % 360;
+        
         // Only update state on certain frames to reduce render frequency
         if (frameCount % frameInterval === 0) {
-          // Calculate new rotation
-          const newRotation = (rotationRef.current + rotationSpeed * (deltaTime / 16.67)) % 360;
-          
           // Update rotation state (this will trigger a re-render)
-          setRotation(newRotation);
-          
-          // Update ref value
-          rotationRef.current = newRotation;
+          setRotation(currentRotation);
         }
+        
+        // Always update ref value for consistent motion
+        rotationRef.current = currentRotation;
       }
       
       animationRef.current = requestAnimationFrame(animate);
@@ -288,15 +291,9 @@ const Carousel3DView = ({
                     </div>
                     
                     <div className="flex justify-between items-center">
-                      {pricesLoading ? (
-                        <div className="text-green-400 font-bold flex items-center">
-                          <div className="animate-pulse bg-green-400/30 h-5 w-16 rounded"></div>
-                        </div>
-                      ) : (
-                        <div className="text-green-400 font-bold">
-                          ฿{getMostRecentPrice(recommendation.bakuganId).toLocaleString()}
-                        </div>
-                      )}
+                      <div className="text-green-400 font-bold">
+                        ฿{getMostRecentPrice(recommendation.bakuganId).toLocaleString()}
+                      </div>
                       <div className="text-xs text-white px-2 py-1 rounded-lg bg-gradient-to-r from-blue-500/50 to-indigo-500/50 backdrop-blur-sm">
                         {getMedalText(recommendation.rank)}
                       </div>

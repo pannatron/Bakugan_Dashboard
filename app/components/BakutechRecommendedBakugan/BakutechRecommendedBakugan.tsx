@@ -74,54 +74,107 @@ const BakutechRecommendedBakugan = ({
     rank1ImageUrl
   );
 
-  // Fetch recommendations with optimized loading strategy
+  // Fetch recommendations with optimized loading strategy - no artificial price loading delay
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+    
     const fetchRecommendations = async () => {
       try {
         setLoading(true);
+        // Set prices loading to false immediately - no artificial delay
+        setPricesLoading(false);
         
-        const response = await fetch('/api/bakutech-recommendations');
+        // Use cache-first strategy with SWR-like approach
+        // First check if we have data in sessionStorage
+        const cachedData = sessionStorage.getItem('bakutech-recommendations');
+        let data;
+        
+        if (cachedData) {
+          try {
+            // Parse and use cached data immediately to show content faster
+            data = JSON.parse(cachedData);
+            // Sort recommendations by rank to ensure rank 1 is first
+            const sortedData = [...data].sort((a, b) => a.rank - b.rank);
+            setRecommendations(sortedData);
+            setError(null);
+            
+            // Loading is technically done with cached data
+            setLoading(false);
+          } catch (e) {
+            console.error('Error parsing cached data:', e);
+            // If parsing fails, we'll fetch fresh data below
+          }
+        }
+        
+        // Fetch fresh data in the background (or as primary source if no cache)
+        const response = await fetch('/api/bakutech-recommendations', {
+          signal,
+          // Add cache control headers
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
         
         if (!response.ok) {
           throw new Error('Failed to fetch BakuTech recommendations');
         }
         
-        const data = await response.json();
+        const freshData = await response.json();
         
         // Sort recommendations by rank to ensure rank 1 is first
-        const sortedData = [...data].sort((a, b) => a.rank - b.rank);
+        const sortedData = [...freshData].sort((a, b) => a.rank - b.rank);
         
-        // Set recommendations immediately to start loading images
-        setRecommendations(sortedData);
-        setError(null);
+        // Pre-process price data to avoid calculations during render
+        const processedData = sortedData.map(rec => {
+          // Pre-calculate the price to avoid doing this during render
+          const price = rec.bakuganId.priceHistory && rec.bakuganId.priceHistory.length > 0
+            ? rec.bakuganId.priceHistory[0].price
+            : rec.bakuganId.currentPrice;
+          
+          // Create a new object with the pre-calculated price
+          return {
+            ...rec,
+            bakuganId: {
+              ...rec.bakuganId,
+              // Add a pre-calculated price field
+              calculatedPrice: price
+            }
+          };
+        });
         
-        // Start loading prices separately
-        fetchPriceData();
+        // Cache the fresh data for future use
+        try {
+          sessionStorage.setItem('bakutech-recommendations', JSON.stringify(processedData));
+        } catch (e) {
+          console.error('Error caching data:', e);
+        }
+        
+        // Only update state if we didn't already set it from cache
+        // or if the data has changed
+        if (!data || JSON.stringify(processedData) !== JSON.stringify(recommendations)) {
+          setRecommendations(processedData);
+          setError(null);
+          setLoading(false);
+        }
       } catch (err: any) {
-        console.error('Error fetching BakuTech recommendations:', err);
-        setError(err.message || 'Failed to fetch BakuTech recommendations');
-        setLoading(false);
-      }
-    };
-    
-    // Separate function to fetch price data
-    const fetchPriceData = () => {
-      try {
-        setPricesLoading(true);
-        
-        // Simulate price data loading with a slight delay
-        // In a real implementation, this would be a separate API call
-        setTimeout(() => {
-          setPricesLoading(false);
-        }, 1500);
-      } catch (err: any) {
-        console.error('Error fetching price data:', err);
-        setPricesLoading(false);
+        // Only set error if the request wasn't aborted
+        if (!signal.aborted) {
+          console.error('Error fetching BakuTech recommendations:', err);
+          setError(err.message || 'Failed to fetch BakuTech recommendations');
+          setLoading(false);
+        }
       }
     };
     
     fetchRecommendations();
-  }, []);
+    
+    // Cleanup function to abort fetch if component unmounts
+    return () => {
+      controller.abort();
+    };
+  }, [recommendations.length]); // Only re-run if recommendations length changes
 
   // Optimized loading state management
   useEffect(() => {

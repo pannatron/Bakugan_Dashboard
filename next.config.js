@@ -11,7 +11,7 @@ const nextConfig = {
   transpilePackages: ['mongoose', 'next-auth'],
   // Disable source maps in production to reduce bundle size
   productionBrowserSourceMaps: false,
-  // Configure image optimization
+  // Enhanced image optimization for faster loading
   images: {
     domains: ['*'], // Allow all domains for now, can be restricted to specific domains later
     formats: ['image/avif', 'image/webp'],
@@ -26,14 +26,16 @@ const nextConfig = {
       },
     ],
     // Optimize image loading - focus on sizes that matter for this app
-    deviceSizes: [640, 750, 828, 1080, 1200],
-    imageSizes: [16, 32, 64, 96, 128, 256],
-    minimumCacheTTL: 3600, // Cache images for at least 1 hour to improve performance
+    // Reduced number of sizes to improve build time and cache efficiency
+    deviceSizes: [640, 828, 1200],
+    imageSizes: [32, 64, 128, 256],
+    minimumCacheTTL: 86400, // Cache images for 24 hours to improve performance
     dangerouslyAllowSVG: true, // Allow SVG images
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     contentDispositionType: 'attachment', // Improve loading performance
     disableStaticImages: false, // Keep static image imports
     unoptimized: false, // Ensure images are optimized
+    // Quality can be set on individual images using the quality prop
   },
   // Optimize performance
   swcMinify: true, // Use SWC minifier for better performance
