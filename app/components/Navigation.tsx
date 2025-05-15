@@ -128,7 +128,7 @@ const Navigation = () => {
                     {isUserDropdownOpen && (
                       <div className="absolute right-0 mt-2 top-full w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 z-50">
                         <div className="py-1" role="menu" aria-orientation="vertical">
-                          <Link 
+                          <a 
                             href="/settings" 
                             className={`block px-4 py-2 text-sm ${
                               pathname.includes('/settings') 
@@ -138,7 +138,7 @@ const Navigation = () => {
                             onClick={() => setIsUserDropdownOpen(false)}
                           >
                             Settings
-                          </Link>
+                          </a>
                           <Link 
                             href="/portfolio" 
                             className={`block px-4 py-2 text-sm ${
@@ -268,7 +268,7 @@ const Navigation = () => {
                     )}
                   </div>
                   
-                  <Link 
+                  <a 
                     href="/settings" 
                     className={`block px-3 py-2 text-base font-medium ${
                       pathname.includes('/settings') 
@@ -278,7 +278,7 @@ const Navigation = () => {
                     onClick={closeMenu}
                   >
                     Settings
-                  </Link>
+                  </a>
                   
                   <Link 
                     href="/portfolio" 

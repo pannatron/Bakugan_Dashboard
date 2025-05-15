@@ -1,34 +1,54 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const UserSettingsPage = () => {
-  const { data: session, update } = useSession();
+  const { data: session, update, status } = useSession();
   const router = useRouter();
   const [name, setName] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Initialize session on client side
   useEffect(() => {
-    if (session?.user?.name) {
-      setName(session.user.name);
-    }
-  }, [session]);
+    const initSession = async () => {
+      try {
+        const session = await getSession();
+        if (!session) {
+          router.push('/auth/signin?callbackUrl=/settings');
+        } else {
+          if (session.user?.name) {
+            setName(session.user.name);
+          }
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing session:', error);
+        setLoading(false);
+      }
+    };
 
-  // Redirect if not logged in
-  useEffect(() => {
-    if (!session && !loading) {
-      router.push('/auth/signin');
+    if (status === 'loading') {
+      // Wait for the status to resolve
+      return;
+    } else if (status === 'unauthenticated') {
+      router.push('/auth/signin?callbackUrl=/settings');
+    } else if (status === 'authenticated' && session?.user?.name) {
+      setName(session.user.name);
+      setLoading(false);
+    } else {
+      initSession();
     }
-  }, [session, router, loading]);
+  }, [session, status, router]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
