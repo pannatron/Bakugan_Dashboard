@@ -16,6 +16,8 @@ export interface IUser extends Document {
   otp?: string;
   otpExpiry?: Date;
   isVerified: boolean;
+  subscriptionPlan?: 'free' | 'pro' | 'elite';
+  subscriptionExpiry?: Date;
   setPassword: (password: string) => void;
   validatePassword: (password: string) => boolean;
   generateOTP: () => string;
@@ -64,6 +66,14 @@ const UserSchema = new Schema<IUser>(
     isVerified: {
       type: Boolean,
       default: false,
+    },
+    subscriptionPlan: {
+      type: String,
+      enum: ['free', 'pro', 'elite'],
+      default: 'free',
+    },
+    subscriptionExpiry: {
+      type: Date,
     },
   },
   {

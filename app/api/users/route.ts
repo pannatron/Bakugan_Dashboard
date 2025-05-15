@@ -63,12 +63,17 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// PATCH /api/users - Update user role
+// PATCH /api/users - Update user role or subscription
 export async function PATCH(req: NextRequest) {
   try {
     // Get request body
     const body = await req.json();
-    const { userId, isAdmin: setAdminStatus } = body;
+    const { 
+      userId, 
+      isAdmin: setAdminStatus,
+      subscriptionPlan,
+      subscriptionExpiry
+    } = body;
     
     if (!userId) {
       return NextResponse.json(
@@ -77,19 +82,52 @@ export async function PATCH(req: NextRequest) {
       );
     }
     
-    if (typeof setAdminStatus !== 'boolean') {
+    await connectDB();
+    
+    // Prepare update object
+    const updateData: any = {};
+    
+    // Handle admin status update
+    if (typeof setAdminStatus === 'boolean') {
+      updateData.isAdmin = setAdminStatus;
+    }
+    
+    // Handle subscription plan update
+    if (subscriptionPlan) {
+      if (!['free', 'pro', 'elite'].includes(subscriptionPlan)) {
+        return NextResponse.json(
+          { error: 'Invalid subscription plan. Must be one of: free, pro, elite' },
+          { status: 400 }
+        );
+      }
+      updateData.subscriptionPlan = subscriptionPlan;
+    }
+    
+    // Handle subscription expiry update
+    if (subscriptionExpiry) {
+      try {
+        const expiryDate = new Date(subscriptionExpiry);
+        updateData.subscriptionExpiry = expiryDate;
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Invalid date format for subscription expiry' },
+          { status: 400 }
+        );
+      }
+    }
+    
+    // If no valid updates were provided
+    if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        { error: 'isAdmin must be a boolean value' },
+        { error: 'No valid update fields provided' },
         { status: 400 }
       );
     }
     
-    await connectDB();
-    
-    // Update user role
+    // Update user
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { isAdmin: setAdminStatus },
+      updateData,
       { new: true, select: '-passwordHash -salt -otp -otpExpiry' }
     );
     

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useImagePreloader } from '@/app/hooks/useImagePreloader';
 import { BakutechRecommendation, BakutechRecommendedBakuganProps } from './types';
@@ -51,18 +51,32 @@ const BakutechRecommendedBakugan = ({
     return () => window.removeEventListener('resize', checkDeviceType);
   }, []);
 
-  // Extract image URLs for preloading
-  const imageUrls = useMemo(() => {
-    return recommendations.map(rec => rec.bakuganId.imageUrl).filter(Boolean);
+  // Extract image URLs for preloading with rank 1 prioritized
+  const { imageUrls, rank1ImageUrl } = useMemo(() => {
+    // Sort recommendations by rank to ensure rank 1 is first
+    const sortedRecs = [...recommendations].sort((a, b) => a.rank - b.rank);
+    const urls = sortedRecs.map(rec => rec.bakuganId.imageUrl).filter(Boolean);
+    
+    // Get the rank 1 image URL if it exists
+    const rank1Rec = recommendations.find(rec => rec.rank === 1);
+    const rank1Url = rank1Rec?.bakuganId.imageUrl;
+    
+    return { 
+      imageUrls: urls,
+      rank1ImageUrl: rank1Url ? [rank1Url] : []
+    };
   }, [recommendations]);
 
-  // Use image preloader
-  const { priorityImagesLoaded, allImagesLoaded } = useImagePreloader(imageUrls, 3);
+  // Use image preloader with rank 1 prioritization
+  const { priorityImagesLoaded, allImagesLoaded, rank1ImageLoaded } = useImagePreloader(
+    imageUrls, 
+    3,
+    rank1ImageUrl
+  );
 
-  // Fetch recommendations - split into two separate operations
+  // Fetch recommendations with optimized loading strategy
   useEffect(() => {
-    // First fetch just the basic data without waiting for prices
-    const fetchBasicData = async () => {
+    const fetchRecommendations = async () => {
       try {
         setLoading(true);
         
@@ -74,12 +88,15 @@ const BakutechRecommendedBakugan = ({
         
         const data = await response.json();
         
+        // Sort recommendations by rank to ensure rank 1 is first
+        const sortedData = [...data].sort((a, b) => a.rank - b.rank);
+        
         // Set recommendations immediately to start loading images
-        setRecommendations(data);
+        setRecommendations(sortedData);
         setError(null);
         
         // Start loading prices separately
-        fetchPriceData(data);
+        fetchPriceData();
       } catch (err: any) {
         console.error('Error fetching BakuTech recommendations:', err);
         setError(err.message || 'Failed to fetch BakuTech recommendations');
@@ -87,8 +104,8 @@ const BakutechRecommendedBakugan = ({
       }
     };
     
-    // Second operation to fetch price data
-    const fetchPriceData = async (data: BakutechRecommendation[]) => {
+    // Separate function to fetch price data
+    const fetchPriceData = () => {
       try {
         setPricesLoading(true);
         
@@ -97,35 +114,38 @@ const BakutechRecommendedBakugan = ({
         setTimeout(() => {
           setPricesLoading(false);
         }, 1500);
-        
       } catch (err: any) {
         console.error('Error fetching price data:', err);
         setPricesLoading(false);
       }
     };
     
-    fetchBasicData();
+    fetchRecommendations();
   }, []);
 
-  // Update loading state based on image preloading - make it faster
+  // Optimized loading state management
   useEffect(() => {
-    // As soon as we have recommendations data, start a timer to show content quickly
+    // If rank 1 image is loaded, show content immediately
+    if (rank1ImageLoaded && loading && recommendations.length > 0) {
+      setLoading(false);
+      return;
+    }
+    
+    // If rank 1 image isn't available but priority images are loaded, show content
+    if (priorityImagesLoaded && loading && recommendations.length > 0) {
+      setLoading(false);
+      return;
+    }
+    
+    // Fallback: show content quickly even if images aren't loaded yet
     if (recommendations.length > 0 && loading) {
-      // Set a short timeout to ensure UI shows up quickly
       const quickShowTimer = setTimeout(() => {
         setLoading(false);
-      }, 200); // Show content after 200ms even if images aren't fully loaded
+      }, 150); // Reduced from 200ms to 150ms for faster display
       
       return () => clearTimeout(quickShowTimer);
     }
-  }, [recommendations.length, loading]);
-  
-  // Also update loading when priority images are loaded
-  useEffect(() => {
-    if (priorityImagesLoaded && loading && recommendations.length > 0) {
-      setLoading(false);
-    }
-  }, [priorityImagesLoaded, loading, recommendations.length]);
+  }, [rank1ImageLoaded, priorityImagesLoaded, loading, recommendations.length]);
 
   // Base classes for the widget
   const baseClasses = `

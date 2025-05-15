@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
@@ -10,6 +10,8 @@ const Navigation = () => {
   const { data: session } = useSession();
   const user = session?.user;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -18,6 +20,24 @@ const Navigation = () => {
   const closeMenu = () => {
     setIsMenuOpen(false);
   };
+
+  const toggleUserDropdown = () => {
+    setIsUserDropdownOpen(!isUserDropdownOpen);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsUserDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const isActive = (path: string) => {
     return pathname === path;
@@ -56,30 +76,16 @@ const Navigation = () => {
             >
               Bakugan List
             </Link>
-            {user && (
-              <>
-                <Link 
-                  href="/favorites" 
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    pathname.includes('/favorites') 
-                      ? 'text-red-300 bg-red-900/20' 
-                      : 'text-gray-300 hover:text-red-300 hover:bg-gray-800'
-                  }`}
-                >
-                  Favorites
-                </Link>
-                <Link 
-                  href="/portfolio" 
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    pathname.includes('/portfolio') 
-                      ? 'text-green-300 bg-green-900/20' 
-                      : 'text-gray-300 hover:text-green-300 hover:bg-gray-800'
-                  }`}
-                >
-                  Portfolio
-                </Link>
-              </>
-            )}
+            <Link 
+              href="/pricing" 
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                pathname.includes('/pricing') 
+                  ? 'text-green-300 bg-green-900/20' 
+                  : 'text-gray-300 hover:text-green-300 hover:bg-gray-800'
+              }`}
+            >
+              Pricing
+            </Link>
             {user?.isAdmin && (
               <Link 
                 href="/admin" 
@@ -96,22 +102,77 @@ const Navigation = () => {
             {/* Auth buttons */}
             <div className="ml-4">
               {user ? (
-                <div className="flex items-center gap-4">
-                  <div className="text-sm text-gray-300">
-                    <span className="font-medium text-blue-400">{user.name}</span>
+                <div className="flex items-center gap-4" ref={dropdownRef}>
+                  <div 
+                    className="text-sm text-gray-300 cursor-pointer flex items-center relative"
+                    onClick={toggleUserDropdown}
+                  >
+                    <span className="font-medium text-blue-400 hover:text-blue-300 transition-colors">
+                      {user.name}
+                    </span>
+                    <svg 
+                      className={`ml-1 h-4 w-4 text-gray-400 transition-transform duration-200 ${isUserDropdownOpen ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                     {user.isAdmin && (
                       <span className="ml-2 px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-full text-xs">
                         Admin
                       </span>
                     )}
+                    
+                    {/* User dropdown menu */}
+                    {isUserDropdownOpen && (
+                      <div className="absolute right-0 mt-2 top-full w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 z-50">
+                        <div className="py-1" role="menu" aria-orientation="vertical">
+                          <Link 
+                            href="/settings" 
+                            className={`block px-4 py-2 text-sm ${
+                              pathname.includes('/settings') 
+                                ? 'text-blue-300 bg-blue-900/20' 
+                                : 'text-gray-300 hover:text-blue-300 hover:bg-gray-700'
+                            }`}
+                            onClick={() => setIsUserDropdownOpen(false)}
+                          >
+                            Settings
+                          </Link>
+                          <Link 
+                            href="/portfolio" 
+                            className={`block px-4 py-2 text-sm ${
+                              pathname.includes('/portfolio') 
+                                ? 'text-green-300 bg-green-900/20' 
+                                : 'text-gray-300 hover:text-green-300 hover:bg-gray-700'
+                            }`}
+                            onClick={() => setIsUserDropdownOpen(false)}
+                          >
+                            Portfolio
+                          </Link>
+                          <Link 
+                            href="/favorites" 
+                            className={`block px-4 py-2 text-sm ${
+                              pathname.includes('/favorites') 
+                                ? 'text-red-300 bg-red-900/20' 
+                                : 'text-gray-300 hover:text-red-300 hover:bg-gray-700'
+                            }`}
+                            onClick={() => setIsUserDropdownOpen(false)}
+                          >
+                            Favorites
+                          </Link>
+                          <div className="border-t border-gray-700 my-1"></div>
+                          <button
+                            onClick={() => signOut({ callbackUrl: '/' })}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-red-300 hover:bg-gray-700"
+                            role="menuitem"
+                          >
+                            Logout
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  
-                  <button
-                    onClick={() => signOut({ callbackUrl: '/' })}
-                    className="px-4 py-2 rounded-xl bg-gray-700 text-white text-sm font-medium hover:bg-gray-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
-                  >
-                    Logout
-                  </button>
                 </div>
               ) : (
                 <Link
@@ -169,32 +230,17 @@ const Navigation = () => {
             >
               Bakugan List
             </Link>
-            {user && (
-              <>
-                <Link 
-                  href="/favorites" 
-                  className={`block px-3 py-2 rounded-md text-base font-medium ${
-                    pathname.includes('/favorites') 
-                      ? 'text-red-300 bg-red-900/20' 
-                      : 'text-gray-300 hover:text-red-300 hover:bg-gray-800'
-                  }`}
-                  onClick={closeMenu}
-                >
-                  Favorites
-                </Link>
-                <Link 
-                  href="/portfolio" 
-                  className={`block px-3 py-2 rounded-md text-base font-medium ${
-                    pathname.includes('/portfolio') 
-                      ? 'text-green-300 bg-green-900/20' 
-                      : 'text-gray-300 hover:text-green-300 hover:bg-gray-800'
-                  }`}
-                  onClick={closeMenu}
-                >
-                  Portfolio
-                </Link>
-              </>
-            )}
+            <Link 
+              href="/pricing" 
+              className={`block px-3 py-2 rounded-md text-base font-medium ${
+                pathname.includes('/pricing') 
+                  ? 'text-green-300 bg-green-900/20' 
+                  : 'text-gray-300 hover:text-green-300 hover:bg-gray-800'
+              }`}
+              onClick={closeMenu}
+            >
+              Pricing
+            </Link>
             {user?.isAdmin && (
               <Link 
                 href="/admin" 
@@ -221,6 +267,44 @@ const Navigation = () => {
                       </span>
                     )}
                   </div>
+                  
+                  <Link 
+                    href="/settings" 
+                    className={`block px-3 py-2 text-base font-medium ${
+                      pathname.includes('/settings') 
+                        ? 'text-blue-300 bg-blue-900/20' 
+                        : 'text-gray-300 hover:text-blue-300 hover:bg-gray-800'
+                    }`}
+                    onClick={closeMenu}
+                  >
+                    Settings
+                  </Link>
+                  
+                  <Link 
+                    href="/portfolio" 
+                    className={`block px-3 py-2 text-base font-medium ${
+                      pathname.includes('/portfolio') 
+                        ? 'text-green-300 bg-green-900/20' 
+                        : 'text-gray-300 hover:text-green-300 hover:bg-gray-800'
+                    }`}
+                    onClick={closeMenu}
+                  >
+                    Portfolio
+                  </Link>
+                  
+                  <Link 
+                    href="/favorites" 
+                    className={`block px-3 py-2 text-base font-medium ${
+                      pathname.includes('/favorites') 
+                        ? 'text-red-300 bg-red-900/20' 
+                        : 'text-gray-300 hover:text-red-300 hover:bg-gray-800'
+                    }`}
+                    onClick={closeMenu}
+                  >
+                    Favorites
+                  </Link>
+                  
+                  <div className="border-t border-gray-700 my-1"></div>
                   
                   <button
                     onClick={() => signOut({ callbackUrl: '/' })}

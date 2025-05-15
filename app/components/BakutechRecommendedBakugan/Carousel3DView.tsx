@@ -221,7 +221,7 @@ const Carousel3DView = ({
                             src={recommendation.bakuganId.imageUrl}
                             alt={recommendation.bakuganId.names[0]}
                             className="w-full h-full object-cover"
-                            loading="lazy"
+                            loading={recommendation.rank === 1 ? "eager" : "lazy"}
                           />
                         ) : (
                           <Image
@@ -229,9 +229,11 @@ const Carousel3DView = ({
                             alt={recommendation.bakuganId.names[0]}
                             fill
                             sizes="(max-width: 768px) 100vw, 300px"
-                            priority={index < 2} // Load the first two images with priority
-                            loading={index < 2 ? "eager" : "lazy"}
-                            className="object-cover opacity-0 transition-opacity duration-300"
+                            priority={recommendation.rank === 1} // Only prioritize rank 1 image
+                            loading={recommendation.rank === 1 ? "eager" : "lazy"}
+                            className={`object-cover transition-opacity duration-300 ${
+                              recommendation.rank === 1 ? "opacity-100" : "opacity-0"
+                            }`}
                             style={{ 
                               objectFit: 'cover',
                               objectPosition: 'center'

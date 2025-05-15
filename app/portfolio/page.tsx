@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import BakuganList from '../components/BakuganList';
 import PortfolioList from '../components/PortfolioList';
+import PortfolioAnalytics from '../components/PortfolioAnalytics';
 import Link from 'next/link';
 
 interface PortfolioItem {
@@ -299,10 +300,13 @@ export default function PortfolioPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-16 sm:px-6 lg:px-8 xl:px-12">
       {/* Header with Tabs */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-blue-300 mb-4">Your Bakugan Collection</h1>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <p className="text-gray-300">
+      <div className="mb-10">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-10 w-1.5 bg-gradient-to-b from-blue-400 to-purple-500 rounded-full"></div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">Your Bakugan Collection</h1>
+        </div>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <p className="text-gray-300 ml-5">
             Manage your Bakugan collection and track prices over time.
           </p>
           <div className="flex gap-2">
@@ -332,19 +336,19 @@ export default function PortfolioPage() {
                     setLoading(false);
                   });
               }}
-              className="px-4 py-2 rounded-lg bg-green-600/30 text-green-300 border border-green-600/30 hover:bg-green-600/50 transition-colors flex items-center gap-1"
+              className="px-5 py-2 rounded-lg bg-gradient-to-r from-green-500/20 to-teal-500/20 text-white border border-green-500/30 hover:from-green-500/30 hover:to-teal-500/30 transition-all duration-300 shadow-md hover:shadow-green-500/10 flex items-center gap-2"
               disabled={loading}
             >
               {loading ? (
-                <span className="flex items-center gap-1">
-                  <svg className="animate-spin h-4 w-4 text-green-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   Refreshing...
                 </span>
               ) : (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
@@ -354,81 +358,124 @@ export default function PortfolioPage() {
             </button>
             <Link 
               href="/favorites"
-              className="px-4 py-2 rounded-lg bg-red-600/30 text-red-300 border border-red-600/30 hover:bg-red-600/50 transition-colors"
+              className="px-5 py-2 rounded-lg bg-gradient-to-r from-red-500/20 to-pink-500/20 text-white border border-red-500/30 hover:from-red-500/30 hover:to-pink-500/30 transition-all duration-300 shadow-md hover:shadow-red-500/10"
             >
               View Favorites
             </Link>
             <Link 
               href="/bakumania"
-              className="px-4 py-2 rounded-lg bg-blue-600/30 text-blue-300 border border-blue-600/30 hover:bg-blue-600/50 transition-colors"
+              className="px-5 py-2 rounded-lg bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-blue-500/30 hover:from-blue-500/30 hover:to-purple-500/30 transition-all duration-300 shadow-md hover:shadow-blue-500/10"
             >
-              Browse More Bakugan
+              Browse More
             </Link>
           </div>
         </div>
         
         {/* Tab Navigation */}
-        <div className="flex border-b border-gray-700 mb-6">
+        <div className="flex border-b border-gray-700/50 mb-8 ml-5">
           <button
-            className={`py-3 px-6 font-medium ${
+            className={`py-3 px-8 font-medium relative ${
               activeTab === 'portfolio'
-                ? 'text-blue-300 border-b-2 border-blue-500'
+                ? 'text-white'
                 : 'text-gray-400 hover:text-gray-300'
             }`}
             onClick={() => setActiveTab('portfolio')}
           >
             Portfolio
+            {activeTab === 'portfolio' && (
+              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-400 to-purple-500"></div>
+            )}
           </button>
           <button
-            className={`py-3 px-6 font-medium ${
+            className={`py-3 px-8 font-medium relative ${
               activeTab === 'favorites'
-                ? 'text-blue-300 border-b-2 border-blue-500'
+                ? 'text-white'
                 : 'text-gray-400 hover:text-gray-300'
             }`}
             onClick={() => setActiveTab('favorites')}
           >
             Favorites
+            {activeTab === 'favorites' && (
+              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-red-400 to-pink-500"></div>
+            )}
           </button>
         </div>
       </div>
       
       {/* Portfolio Summary - Only show when portfolio tab is active */}
       {activeTab === 'portfolio' && (
-        <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50 mb-8">
-          <h2 className="text-xl font-semibold text-blue-300 mb-4">Portfolio Summary</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50">
-              <p className="text-gray-400 text-sm mb-1">Total Items</p>
-              <p className="text-2xl font-bold text-white">{portfolioItems.length}</p>
+        <>
+          <div className="mb-8 overflow-hidden">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">Portfolio Summary</h2>
+              <div className="flex items-center gap-2">
+                <div className="h-1 w-16 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full"></div>
+              </div>
             </div>
-            <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50">
-              <p className="text-gray-400 text-sm mb-1">Total Value</p>
-              <p className="text-2xl font-bold text-white">฿{totalValue.toLocaleString()}</p>
-            </div>
-            <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50">
-              <p className="text-gray-400 text-sm mb-1">Average Item Value</p>
-              <p className="text-2xl font-bold text-white">
-                ฿{portfolioItems.length > 0 
-                  ? (totalValue / portfolioItems.length).toLocaleString(undefined, {maximumFractionDigits: 0}) 
-                  : 0}
-              </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/60 backdrop-blur-xl rounded-2xl p-5 border border-gray-700/30 shadow-lg transform transition-all duration-300 hover:scale-[1.02] hover:shadow-blue-500/10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-8 w-1 bg-gradient-to-b from-blue-400 to-purple-500 rounded-full"></div>
+                  <p className="text-gray-300 font-medium">Total Items</p>
+                </div>
+                <p className="text-3xl font-bold text-white ml-4">{portfolioItems.length}</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/60 backdrop-blur-xl rounded-2xl p-5 border border-gray-700/30 shadow-lg transform transition-all duration-300 hover:scale-[1.02] hover:shadow-purple-500/10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-8 w-1 bg-gradient-to-b from-purple-400 to-pink-500 rounded-full"></div>
+                  <p className="text-gray-300 font-medium">Total Value</p>
+                </div>
+                <p className="text-3xl font-bold text-white ml-4">฿{totalValue.toLocaleString()}</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/60 backdrop-blur-xl rounded-2xl p-5 border border-gray-700/30 shadow-lg transform transition-all duration-300 hover:scale-[1.02] hover:shadow-green-500/10">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-8 w-1 bg-gradient-to-b from-green-400 to-teal-500 rounded-full"></div>
+                  <p className="text-gray-300 font-medium">Average Value</p>
+                </div>
+                <p className="text-3xl font-bold text-white ml-4">
+                  ฿{portfolioItems.length > 0 
+                    ? (totalValue / portfolioItems.length).toLocaleString(undefined, {maximumFractionDigits: 0}) 
+                    : 0}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+          
+          {/* Portfolio Analytics */}
+          {portfolioItems.length > 0 && (
+            <PortfolioAnalytics portfolioItems={portfolioItems} />
+          )}
+        </>
       )}
       
       {/* Favorites Summary - Only show when favorites tab is active */}
       {activeTab === 'favorites' && (
-        <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50 mb-8">
-          <h2 className="text-xl font-semibold text-blue-300 mb-4">Favorites Summary</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50">
-              <p className="text-gray-400 text-sm mb-1">Total Favorites</p>
-              <p className="text-2xl font-bold text-white">{favoriteItems.length}</p>
+        <div className="mb-8 overflow-hidden">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-pink-500 bg-clip-text text-transparent">Favorites Summary</h2>
+            <div className="flex items-center gap-2">
+              <div className="h-1 w-16 bg-gradient-to-r from-red-400 to-pink-500 rounded-full"></div>
             </div>
-            <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50">
-              <p className="text-gray-400 text-sm mb-1">Tracking</p>
-              <p className="text-2xl font-bold text-white">Price Changes & Availability</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/60 backdrop-blur-xl rounded-2xl p-5 border border-gray-700/30 shadow-lg transform transition-all duration-300 hover:scale-[1.02] hover:shadow-red-500/10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-8 w-1 bg-gradient-to-b from-red-400 to-pink-500 rounded-full"></div>
+                <p className="text-gray-300 font-medium">Total Favorites</p>
+              </div>
+              <p className="text-3xl font-bold text-white ml-4">{favoriteItems.length}</p>
+            </div>
+            
+            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/60 backdrop-blur-xl rounded-2xl p-5 border border-gray-700/30 shadow-lg transform transition-all duration-300 hover:scale-[1.02] hover:shadow-pink-500/10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-8 w-1 bg-gradient-to-b from-pink-400 to-purple-500 rounded-full"></div>
+                <p className="text-gray-300 font-medium">Tracking</p>
+              </div>
+              <p className="text-3xl font-bold text-white ml-4">Price Changes & Availability</p>
             </div>
           </div>
         </div>
@@ -442,13 +489,16 @@ export default function PortfolioPage() {
           onUpdateQuantity={handleUpdateQuantity}
         />
       ) : formattedBakuganItems.length === 0 ? (
-        <div className="text-center py-12 bg-gradient-to-b from-gray-900/50 to-gray-800/30 backdrop-blur-xl rounded-2xl p-6 border border-gray-800/50">
-          <p className="text-gray-400 text-lg mb-4">
+        <div className="text-center py-12 bg-gradient-to-br from-gray-900/80 to-gray-800/60 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/30 shadow-lg">
+          <div className="flex justify-center mb-6">
+            <div className="h-20 w-1 bg-gradient-to-b from-red-400 to-pink-500 rounded-full"></div>
+          </div>
+          <p className="text-white text-xl font-medium mb-6">
             You don't have any favorites yet.
           </p>
           <Link 
             href="/bakumania"
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold hover:from-blue-500 hover:to-blue-400 transition-all duration-300"
+            className="px-8 py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold hover:from-red-400 hover:to-pink-400 transition-all duration-300 shadow-lg hover:shadow-pink-500/20"
           >
             Browse Bakugan to Add
           </Link>
