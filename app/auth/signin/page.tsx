@@ -9,7 +9,7 @@ export default function SignIn() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/bakumania';
-  const [username, setUsername] = useState('');
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,12 +22,12 @@ export default function SignIn() {
     try {
       const result = await signIn('credentials', {
         redirect: false,
-        username,
+        username: usernameOrEmail, // The backend will check if this is an email or username
         password,
       });
 
       if (result?.error) {
-        setError('Invalid username or password');
+        setError('Invalid username/email or password');
         setLoading(false);
         return;
       }
@@ -64,17 +64,17 @@ export default function SignIn() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-1">
-                Username
+              <label htmlFor="usernameOrEmail" className="block text-sm font-medium text-gray-300 mb-1">
+                Username or Email
               </label>
               <input
                 type="text"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="usernameOrEmail"
+                value={usernameOrEmail}
+                onChange={(e) => setUsernameOrEmail(e.target.value)}
                 required
                 className="w-full px-4 py-2 bg-gray-800/70 border border-gray-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-white"
-                placeholder="Enter your username"
+                placeholder="Enter your username or email"
               />
             </div>
 

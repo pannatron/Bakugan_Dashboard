@@ -48,6 +48,8 @@ export const config = {
     '/bakumania',
     '/bakumania/:path*',
     '/portfolio',
+    '/settings',
+    '/favorites',
     '/auth/:path*',
     '/api/bakugan/:path*',
     '/api/bakugan',
@@ -55,5 +57,7 @@ export const config = {
     '/api/recommendations',
     '/api/bakutech-recommendations',
     '/api/portfolio/:path*',
+    '/api/user/:path*',
+    '/api/favorites/:path*',
   ],
 };

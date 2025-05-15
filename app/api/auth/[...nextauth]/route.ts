@@ -37,11 +37,22 @@ export const authOptions: AuthOptions = {
 
         await connectDB();
         
-        // Find user
-        const user = await User.findOne({ 
-          username: credentials.username,
-          isVerified: true // Only allow verified users to login
-        });
+        // Check if the username is an email
+        const isEmail = credentials.username.includes('@');
+        
+        // Find user by username or email
+        let user;
+        if (isEmail) {
+          user = await User.findOne({ 
+            email: credentials.username,
+            isVerified: true // Only allow verified users to login
+          });
+        } else {
+          user = await User.findOne({ 
+            username: credentials.username,
+            isVerified: true // Only allow verified users to login
+          });
+        }
         
         if (!user) {
           return null;
