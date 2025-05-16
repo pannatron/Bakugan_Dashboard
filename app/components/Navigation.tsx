@@ -7,8 +7,38 @@ import { useSession, signOut } from 'next-auth/react';
 
 const Navigation = () => {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const user = session?.user;
+  const isLoading = status === "loading";
+  
+  // Store the user name in state to prevent flickering during navigation
+  const [cachedUserName, setCachedUserName] = useState<string | null | undefined>(null);
+  
+  // Initialize cached user name from localStorage or current user
+  useEffect(() => {
+    // Try to get cached name from localStorage first
+    const storedName = typeof window !== 'undefined' ? localStorage.getItem('cachedUserName') : null;
+    
+    if (storedName) {
+      setCachedUserName(storedName);
+    } else if (user?.name) {
+      setCachedUserName(user.name);
+    }
+  }, []);
+  
+  // Update cached user name when session changes
+  useEffect(() => {
+    if (user?.name && user.name !== cachedUserName) {
+      setCachedUserName(user.name);
+      // Store in localStorage for persistence across page loads
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cachedUserName', user.name);
+      }
+    }
+  }, [user?.name, cachedUserName]);
+  
+  // Use cached name or current name
+  const displayName = isLoading ? cachedUserName : user?.name;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -101,14 +131,22 @@ const Navigation = () => {
             
             {/* Auth buttons */}
             <div className="ml-4">
-              {user ? (
+              {isLoading ? (
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-gray-300 flex items-center relative">
+                    <span className="font-medium text-blue-400 opacity-70">
+                      <span className="w-16 h-4 bg-blue-400/20 rounded animate-pulse"></span>
+                    </span>
+                  </div>
+                </div>
+              ) : user ? (
                 <div className="flex items-center gap-4" ref={dropdownRef}>
                   <div 
                     className="text-sm text-gray-300 cursor-pointer flex items-center relative"
                     onClick={toggleUserDropdown}
                   >
                     <span className="font-medium text-blue-400 hover:text-blue-300 transition-colors">
-                      {user.name}
+                      {displayName}
                     </span>
                     <svg 
                       className={`ml-1 h-4 w-4 text-gray-400 transition-transform duration-200 ${isUserDropdownOpen ? 'rotate-180' : ''}`} 
@@ -163,7 +201,13 @@ const Navigation = () => {
                           </Link>
                           <div className="border-t border-gray-700 my-1"></div>
                           <button
-                            onClick={() => signOut({ callbackUrl: '/' })}
+                            onClick={() => {
+                              // Clear cached user name from localStorage on logout
+                              if (typeof window !== 'undefined') {
+                                localStorage.removeItem('cachedUserName');
+                              }
+                              signOut({ callbackUrl: '/' });
+                            }}
                             className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-red-300 hover:bg-gray-700"
                             role="menuitem"
                           >
@@ -257,10 +301,16 @@ const Navigation = () => {
             
             {/* Mobile auth buttons */}
             <div className="mt-2 pt-2 border-t border-gray-700">
-              {user ? (
+              {isLoading ? (
+                <div className="px-3 py-2 text-sm text-gray-300">
+                  <span className="font-medium text-blue-400 opacity-70">
+                    <span className="w-16 h-4 bg-blue-400/20 rounded animate-pulse"></span>
+                  </span>
+                </div>
+              ) : user ? (
                 <>
                   <div className="px-3 py-2 text-sm text-gray-300">
-                    <span className="font-medium text-blue-400">{user.name}</span>
+                    <span className="font-medium text-blue-400">{displayName}</span>
                     {user.isAdmin && (
                       <span className="ml-2 px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-full text-xs">
                         Admin
@@ -307,7 +357,13 @@ const Navigation = () => {
                   <div className="border-t border-gray-700 my-1"></div>
                   
                   <button
-                    onClick={() => signOut({ callbackUrl: '/' })}
+                    onClick={() => {
+                      // Clear cached user name from localStorage on logout
+                      if (typeof window !== 'undefined') {
+                        localStorage.removeItem('cachedUserName');
+                      }
+                      signOut({ callbackUrl: '/' });
+                    }}
                     className="w-full text-left px-3 py-2 text-base font-medium text-gray-300 hover:text-red-300 hover:bg-gray-800"
                   >
                     Logout
